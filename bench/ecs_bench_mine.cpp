@@ -90,7 +90,7 @@ namespace
     struct Pos    { float x{0}, y{0}; };
     struct Vel    { float vx{0}, vy{0}; };
     struct Tag    { std::uint32_t v{0}; };
-    struct Extra  { std::uint8_t pad{0}; };
+    struct Extra  {}; // Zero-sized Tag component (std::is_empty_v<Extra> == true)
     struct ReqA   { float w{0}; };
     struct ReqB   { float w{0}; };
     struct ReqC   { float w{0}; };

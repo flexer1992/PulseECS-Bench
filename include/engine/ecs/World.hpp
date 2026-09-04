@@ -317,8 +317,13 @@ namespace engine
         }
 
         template <typename T>
-        bool hasComponent(EntityId id)
+        bool hasComponent(EntityId id) const
         {
+            const size_t typeId = getTypeId<T>();
+            if (maskUsable_ && typeId < kMaskBits && id < compMask_.size())
+            {
+                return (compMask_[id] & (std::uint64_t(1) << typeId)) != 0;
+            }
             const auto *c = findContainer<T>();
             return c && c->contains(id);
         }

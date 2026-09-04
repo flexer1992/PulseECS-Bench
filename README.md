@@ -33,12 +33,12 @@ Different ECS data structures dominate different workloads:
 
 | Workload Category | Representative Operation | PulseECS *(Sparse-Set)* | EnTT *(Sparse-Set)* | flecs *(Archetype)* | pico_ecs *(Flat C API)* |
 | :--- | :--- | :---: | :---: | :---: | :---: |
-| **Point Lookup** | `get<Pos>` | 🟢 **Fast** (`7.0 ns`) | 🔴 Slower (`38.8 ns`) | 🔴 Slower (`78.4 ns`) | 🟢 **Fast** (`5.4 ns`) |
-| **Packed Iteration** | `each<Pos, Vel>` | 🟢 **Fast** (`0.61 ns`) 🏆 | 🟡 Moderate (`1.68 ns`) | 🟢 **Fast** (`0.63 ns`) | 🟢 **Fast** (`0.84 ns`) |
-| **Structural Mutation** | `add components` | 🟡 Moderate (`13.1 ns`) | 🟢 **Fast** (`10.8 ns`) | 🔴 Heavy (`73.5 ns`) | 🟢 **Fast** (`5.2 ns`) |
-| **Complex Queries** | `query<4> without<1>` | 🟡 Moderate (`4.17 ns`) | 🟡 Moderate (`5.10 ns`) | 🟢 **Blazing** (`0.17 ns`) | 🟢 **Fast** (`1.49 ns`) |
-| **Entity Destruction** | `destroyEntity` | 🟢 **Fast** (`64.7 ns`) | 🔴 Slower (`153.8 ns`) | 🔴 Slower (`177.5 ns`) | 🟢 **Fast** (`29.4 ns`) |
-| **Fragmented World** | `frag 7 systems` | 🟡 Degrades (`10.8 ns`) | 🟡 Degrades (`23.0 ns`) | 🟢 **Immune** (`0.49 ns`) | 🔴 Degrades (`20.2 ns`) |
+| **Point Lookup** | `get<Pos>` | 🟢 **Fast** (`7.2 ns`) 🏆 | 🔴 Slower (`39.7 ns`) | 🔴 Slower (`80.9 ns`) | 🟢 **Fast** (`7.7 ns`) |
+| **Packed Iteration** | `each<Pos, Vel>` | 🟢 **Fast** (`0.65 ns`) | 🟡 Moderate (`1.61 ns`) | 🟢 **Fast** (`0.50 ns`) | 🟢 **Fast** (`0.84 ns`) |
+| **Structural Mutation** | `add components` | 🟡 Moderate (`14.3 ns`) | 🟢 **Fast** (`11.5 ns`) | 🔴 Heavy (`74.9 ns`) | 🟢 **Fast** (`5.9 ns`) |
+| **Complex Queries** | `query<4> without<1>` | 🟡 Moderate (`4.12 ns`) | 🟡 Moderate (`5.34 ns`) | 🟢 **Blazing** (`0.19 ns`) | 🟢 **Fast** (`1.45 ns`) |
+| **Entity Destruction** | `destroyEntity` | 🟢 **Fast** (`69.7 ns`) | 🔴 Slower (`157.5 ns`) | 🔴 Slower (`166.5 ns`) | 🟢 **Fast** (`30.1 ns`) |
+| **Fragmented World** | `frag 7 systems` | 🟡 Degrades (`11.1 ns`) | 🟡 Degrades (`23.4 ns`) | 🟢 **Immune** (`0.47 ns`) | 🔴 Degrades (`18.1 ns`) |
 
 *Measured at 10,000,000 entities on Apple M3 Pro (Release -O3 -march=native). Nanoseconds per operation, lower is faster.*
 
@@ -84,9 +84,12 @@ To prevent the common pitfalls of synthetic microbenchmarks, all tests adhere to
 
 At 10M entities, PulseECS demonstrates lower latency across 7 of 8 measured scenarios:
 
-* **`get<Pos>` (7.02 ns vs 38.83 ns):** The sparse index uses `uint32_t` rather than `size_t`, cutting index table memory footprint in half and improving cache/TLB efficiency during random lookups. Additionally, splitting `getContainer` into a slim fast-path (`containerPtr`) avoids instruction cache pollution.
-* **`destroyEntity` (64.73 ns vs 153.82 ns):** A 64-bit component mask allows `destroyEntity()` to check active components in a single bitwise operation, skipping component pools that were never attached to that entity.
-* **`frag 7 systems` (10.79 ns vs 22.95 ns) & Pure POD Architecture:** Components in user code are 100% clean POD types (`struct Position { float x, y; };` without any engine-specific fields). Internally, `SparseSet<T>` packs them into a contiguous `Slot { EntityId owner; T data; }`, preserving spatial locality so that `owner` and `data` share the same cache line. This eliminates the secondary memory stream (`denseToEntity_`) during multi-component joins while keeping user structs standard layout.
+* **`get<Pos>` (7.19 ns vs 39.74 ns):** The sparse index uses `uint32_t` rather than `size_t`, cutting index table memory footprint in half and improving cache/TLB efficiency during random lookups. Additionally, splitting `getContainer` into a slim fast-path (`containerPtr`) avoids instruction cache pollution.
+* **`destroyEntity` (69.69 ns vs 157.49 ns):** A 64-bit component mask allows `destroyEntity()` to check active components in a single bitwise operation, skipping component pools that were never attached to that entity.
+* **Pure POD & Zero-Sized Tag Architecture (`[[no_unique_address]]`):**
+  - **Clean POD components:** User structs are standard layout (`struct Position { float x, y; };`), wrapped internally in a contiguous `Slot { EntityId owner; T data; }` so that `owner` and component data share the same cache line.
+  - **Zero-Sized Tags:** Empty structs (where `std::is_empty_v<T>` is true) consume **zero bytes** of memory for instances. The `Slot` size collapses to exactly 4 bytes (`sizeof(EntityId)`), functioning as a pure entity ID vector.
+  - **Instant Bitmask Filtering:** `hasComponent<T>()` and `query().exclude<T>()` resolve against the 64-bit component bitmask in a single CPU cycle instead of traversing sparse maps.
 
 ---
 
@@ -138,14 +141,14 @@ world.destroyEntity(entity);
 
 | Operation | PulseECS | EnTT | flecs | EntityX | gaia-ecs | pico_ecs | Fastest |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **add components (Pos+Vel+50%Tag)** | 13.14 ns | 10.80 ns | 73.53 ns | 12.36 ns | 47.61 ns | **5.19 ns** | pico_ecs |
-| **each<Pos,Vel>** | **0.61 ns** | 1.68 ns | 0.63 ns | 3.90 ns | 0.71 ns | 0.84 ns | PulseECS |
-| **each<Pos,Vel,Tag>** | 1.18 ns | 4.10 ns | **0.26 ns** | 6.15 ns | 1.23 ns | 1.28 ns | flecs |
-| **query<4> without<1>** | 4.17 ns | 5.10 ns | **0.17 ns** | 9.72 ns | 0.84 ns | 1.49 ns | flecs |
-| **destroyEntity** | 64.73 ns | 153.82 ns | 177.50 ns | 68.08 ns | 309.90 ns | **29.43 ns** | pico_ecs |
-| **get<Pos>** | 7.02 ns | 38.83 ns | 78.44 ns | 17.32 ns | 35.05 ns | **5.40 ns** | pico_ecs |
-| **7 systems mixed (full)** | 1.88 ns | 6.30 ns | **0.58 ns** | 11.83 ns | 2.85 ns | 2.55 ns | flecs |
-| **frag 7sys mixed (alive)** | 10.79 ns | 22.95 ns | **0.49 ns** | 14.73 ns | 2.71 ns | 20.19 ns | flecs |
+| **add components (Pos+Vel+50%Tag)** | 14.27 ns | 11.48 ns | 74.85 ns | 12.52 ns | 47.33 ns | **5.88 ns** | pico_ecs |
+| **each<Pos,Vel>** | 0.65 ns | 1.61 ns | **0.50 ns** | 3.96 ns | 0.73 ns | 0.84 ns | flecs |
+| **each<Pos,Vel,Tag>** | 1.24 ns | 4.20 ns | **0.28 ns** | 5.88 ns | 1.22 ns | 1.31 ns | flecs |
+| **query<4> without<1>** | 4.12 ns | 5.34 ns | **0.19 ns** | 9.83 ns | 0.82 ns | 1.45 ns | flecs |
+| **destroyEntity** | 69.69 ns | 157.49 ns | 166.46 ns | 68.78 ns | 315.48 ns | **30.08 ns** | pico_ecs |
+| **get<Pos>** | **7.19 ns** | 39.74 ns | 80.85 ns | 17.50 ns | 33.47 ns | 7.68 ns | PulseECS |
+| **7 systems mixed (full)** | 1.90 ns | 6.40 ns | **0.64 ns** | 12.08 ns | 2.85 ns | 2.58 ns | flecs |
+| **frag 7sys mixed (alive)** | 11.09 ns | 23.39 ns | **0.47 ns** | 15.12 ns | 2.68 ns | 18.09 ns | flecs |
 
 *Validated with `sink=100000061314363` across all 6 engines.*
 </details>
@@ -155,14 +158,14 @@ world.destroyEntity(entity);
 
 | Operation | PulseECS | EnTT | flecs | EntityX | gaia-ecs | pico_ecs | Fastest |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **add components (Pos+Vel+50%Tag)** | 10.60 ns | 9.64 ns | 72.44 ns | 11.80 ns | 44.16 ns | **4.99 ns** | pico_ecs |
-| **each<Pos,Vel>** | 0.59 ns | 1.25 ns | **0.30 ns** | 3.82 ns | 0.65 ns | 0.82 ns | flecs |
-| **each<Pos,Vel,Tag>** | 1.17 ns | 3.40 ns | **0.33 ns** | 5.80 ns | 0.82 ns | 1.24 ns | flecs |
-| **query<4> without<1>** | 3.04 ns | 4.47 ns | **0.25 ns** | 9.56 ns | 0.81 ns | 1.34 ns | flecs |
-| **destroyEntity** | 32.77 ns | 103.72 ns | 117.09 ns | 22.35 ns | 165.45 ns | **8.25 ns** | pico_ecs |
-| **get<Pos>** | 2.49 ns | 8.96 ns | 45.35 ns | 4.75 ns | 13.87 ns | **1.30 ns** | pico_ecs |
-| **7 systems mixed (full)** | 1.81 ns | 5.06 ns | **0.57 ns** | 11.64 ns | 1.85 ns | 2.24 ns | flecs |
-| **frag 7sys mixed (alive)** | 4.15 ns | 10.05 ns | **0.50 ns** | 14.08 ns | 1.77 ns | 7.23 ns | flecs |
+| **add components (Pos+Vel+50%Tag)** | 10.54 ns | 10.08 ns | 73.39 ns | 11.89 ns | 44.76 ns | **5.04 ns** | pico_ecs |
+| **each<Pos,Vel>** | 0.65 ns | 1.39 ns | **0.29 ns** | 3.99 ns | 0.67 ns | 0.82 ns | flecs |
+| **each<Pos,Vel,Tag>** | 1.14 ns | 3.37 ns | **0.26 ns** | 5.87 ns | 0.74 ns | 1.23 ns | flecs |
+| **query<4> without<1>** | 2.87 ns | 4.63 ns | **0.16 ns** | 10.02 ns | 0.81 ns | 1.41 ns | flecs |
+| **destroyEntity** | 31.77 ns | 103.65 ns | 113.28 ns | 28.32 ns | 172.98 ns | **9.81 ns** | pico_ecs |
+| **get<Pos>** | 1.67 ns | 7.75 ns | 50.80 ns | 5.52 ns | 15.13 ns | **1.30 ns** | pico_ecs |
+| **7 systems mixed (full)** | 1.90 ns | 5.29 ns | **0.56 ns** | 11.36 ns | 1.67 ns | 2.43 ns | flecs |
+| **frag 7sys mixed (alive)** | 3.94 ns | 9.60 ns | **0.45 ns** | 14.60 ns | 1.75 ns | 8.44 ns | flecs |
 
 *Validated with `sink=3000018393552` across all 6 engines.*
 </details>
@@ -172,14 +175,14 @@ world.destroyEntity(entity);
 
 | Operation | PulseECS | EnTT | flecs | EntityX | gaia-ecs | pico_ecs | Fastest |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **add components (Pos+Vel+50%Tag)** | 11.30 ns | 9.64 ns | 75.04 ns | 11.26 ns | 43.33 ns | **5.02 ns** | pico_ecs |
-| **each<Pos,Vel>** | 0.59 ns | 1.01 ns | **0.24 ns** | 3.82 ns | 0.32 ns | 0.75 ns | flecs |
-| **each<Pos,Vel,Tag>** | 1.14 ns | 2.53 ns | **0.30 ns** | 5.65 ns | 0.48 ns | 1.19 ns | flecs |
-| **query<4> without<1>** | 2.94 ns | 4.14 ns | **0.19 ns** | 9.21 ns | 0.34 ns | 1.43 ns | flecs |
-| **destroyEntity** | 13.56 ns | 35.53 ns | 33.09 ns | 16.28 ns | 88.66 ns | **6.99 ns** | pico_ecs |
-| **get<Pos>** | 1.20 ns | 4.06 ns | 11.94 ns | 2.74 ns | 11.16 ns | **0.82 ns** | pico_ecs |
-| **7 systems mixed (full)** | 1.60 ns | 3.91 ns | **0.64 ns** | 11.00 ns | 0.77 ns | 2.23 ns | flecs |
-| **frag 7sys mixed (alive)** | 2.12 ns | 4.83 ns | **0.51 ns** | 13.92 ns | 0.64 ns | 3.44 ns | flecs |
+| **add components (Pos+Vel+50%Tag)** | 10.30 ns | 10.01 ns | 73.72 ns | 11.52 ns | 43.63 ns | **4.95 ns** | pico_ecs |
+| **each<Pos,Vel>** | 0.66 ns | 1.08 ns | **0.22 ns** | 3.68 ns | 0.33 ns | 0.77 ns | flecs |
+| **each<Pos,Vel,Tag>** | 1.29 ns | 2.57 ns | **0.27 ns** | 5.73 ns | 0.52 ns | 1.22 ns | flecs |
+| **query<4> without<1>** | 2.79 ns | 4.10 ns | **0.16 ns** | 9.54 ns | 0.37 ns | 1.36 ns | flecs |
+| **destroyEntity** | 14.33 ns | 35.83 ns | 42.65 ns | 16.52 ns | 79.29 ns | **6.87 ns** | pico_ecs |
+| **get<Pos>** | 1.15 ns | 4.23 ns | 11.65 ns | 2.91 ns | 10.33 ns | **0.91 ns** | pico_ecs |
+| **7 systems mixed (full)** | 1.76 ns | 3.97 ns | **0.53 ns** | 11.28 ns | 0.91 ns | 2.20 ns | flecs |
+| **frag 7sys mixed (alive)** | 2.10 ns | 5.83 ns | **0.50 ns** | 14.68 ns | 0.66 ns | 3.24 ns | flecs |
 
 *Validated with `sink=200006127435` across all 6 engines.*
 </details>
@@ -189,14 +192,14 @@ world.destroyEntity(entity);
 
 | Operation | PulseECS | EnTT | flecs | EntityX | gaia-ecs | pico_ecs | Fastest |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **add components (Pos+Vel+50%Tag)** | 11.75 ns | 9.67 ns | 75.53 ns | 11.85 ns | 43.20 ns | **5.04 ns** | pico_ecs |
-| **each\<Pos,Vel\>** | 0.56 ns | 1.06 ns | **0.26 ns** | 3.92 ns | 0.35 ns | 0.74 ns | flecs |
-| **each\<Pos,Vel,Tag\>** | 1.00 ns | 2.54 ns | 0.44 ns | 5.64 ns | **0.38 ns** | 1.13 ns | gaia-ecs |
-| **query\<4\> without\<1\>** | 2.81 ns | 3.70 ns | **0.21 ns** | 9.19 ns | 0.26 ns | 1.28 ns | flecs |
-| **destroyEntity** | 11.29 ns | 30.69 ns | 25.94 ns | 15.72 ns | 56.62 ns | **6.26 ns** | pico_ecs |
-| **get\<Pos\>** | 0.87 ns | 3.34 ns | 43.94 ns | 2.23 ns | 5.71 ns | **0.60 ns** | pico_ecs |
-| **7 systems mixed (full)** | 1.75 ns | 3.91 ns | 1.04 ns | 11.23 ns | **0.69 ns** | 2.13 ns | gaia-ecs |
-| **frag 7sys mixed (alive)** | 1.85 ns | 3.34 ns | 0.88 ns | 14.37 ns | **0.62 ns** | 2.91 ns | gaia-ecs |
+| **add components (Pos+Vel+50%Tag)** | 12.66 ns | 8.66 ns | 75.22 ns | 11.26 ns | 42.21 ns | **5.09 ns** | pico_ecs |
+| **each<Pos,Vel>** | 0.66 ns | 1.12 ns | **0.24 ns** | 3.83 ns | 0.27 ns | 0.66 ns | flecs |
+| **each<Pos,Vel,Tag>** | 0.98 ns | 2.45 ns | 0.38 ns | 5.67 ns | **0.34 ns** | 1.09 ns | gaia-ecs |
+| **query<4> without<1>** | 2.44 ns | 3.75 ns | **0.24 ns** | 9.44 ns | 0.28 ns | 1.49 ns | flecs |
+| **destroyEntity** | 10.72 ns | 22.70 ns | 25.52 ns | 15.67 ns | 57.99 ns | **6.98 ns** | pico_ecs |
+| **get<Pos>** | **0.71 ns** | 3.56 ns | 9.91 ns | 2.51 ns | 6.79 ns | 0.76 ns | PulseECS |
+| **7 systems mixed (full)** | 1.56 ns | 3.51 ns | 1.06 ns | 11.16 ns | **0.77 ns** | 2.05 ns | gaia-ecs |
+| **frag 7sys mixed (alive)** | 1.58 ns | 3.69 ns | 0.77 ns | 13.36 ns | **0.66 ns** | 2.64 ns | gaia-ecs |
 
 *Validated with `sink=2000614060` across all 6 engines.*
 </details>

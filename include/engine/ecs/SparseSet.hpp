@@ -32,7 +32,7 @@ namespace engine
         struct Slot
         {
             EntityId owner;
-            T data;
+            [[no_unique_address]] T data;
 
             Slot() = default;
             Slot(EntityId o, const T &d) : owner(o), data(d) {}
