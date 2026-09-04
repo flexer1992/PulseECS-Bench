@@ -2,21 +2,14 @@
 
 #include "engine/ecs/Entity.hpp"
 #include <cassert>
-#include <concepts>
 #include <cstdint>
 #include <limits>
+#include <type_traits>
+#include <utility>
 #include <vector>
 
 namespace engine
 {
-    /// Контракт компонента SparseSet: поле `EntityId owner` (по конвенции —
-    /// первым, чтобы делить кэш-линию с данными). create() патчит его,
-    /// getOwner()/remove() читают. Без поля remove() молча писал бы мусор.
-    template <typename T>
-    concept ComponentWithOwner = requires(T &t) {
-        { t.owner } -> std::convertible_to<const EntityId &>;
-    };
-
     class ISparseSet
     {
     public:
@@ -31,27 +24,38 @@ namespace engine
     template <typename T>
     class SparseSet : public ISparseSet
     {
-        static_assert(ComponentWithOwner<T>,
-                      "SparseSet<T>: component must declare `EntityId owner` (conventionally the first "
-                      "member). SparseSet::create patches it, getOwner()/remove() rely on it.");
+    public:
+        /// Внутренний слот хранения: EntityId owner + данные компонента T.
+        /// Пользовательский T остаётся 100% чистым POD (standard layout).
+        /// owner упакован в ту же кэш-линию, что исключает второй поток по памяти
+        /// при итерации и swap-and-pop.
+        struct Slot
+        {
+            EntityId owner;
+            T data;
+
+            Slot() = default;
+            Slot(EntityId o, const T &d) : owner(o), data(d) {}
+            Slot(EntityId o, T &&d) : owner(o), data(std::move(d)) {}
+
+            template <typename... CArgs>
+            requires (sizeof...(CArgs) > 1 || (!std::is_same_v<std::decay_t<CArgs>, T> && ...))
+            Slot(EntityId o, CArgs &&...cargs)
+                : owner(o), data{std::forward<CArgs>(cargs)...} {}
+
+            operator T &() noexcept { return data; }
+            operator const T &() const noexcept { return data; }
+            T *operator->() noexcept { return &data; }
+            const T *operator->() const noexcept { return &data; }
+        };
 
     private:
-        std::vector<T> dense_;
-        // Раньше здесь был std::vector<EntityId> denseToEntity_ — отдельный массив
-        // для маппинга dense-индекс → entity id. На 2M сущностей и 6 типов это
-        // 48 МБ оверхеда при том, что те же id уже лежат в поле owner каждого
-        // компонента (dense_[i].owner). getOwner(index) теперь читает прямо из
-        // dense_[index].owner, убирая второй поток по памяти в итерации.
-        // Индекс в dense_, а не EntityId — хватает uint32_t. Раньше был size_t:
-        // 8 байт на слот сущности, из которых половина всегда нули. sparse_
-        // читается вразнобой на каждом get(), поэтому его размер напрямую бьёт
-        // по кэшу. Сужение до 4 байт дало −7% на get<Pos> и −13% на итерации
-        // фрагментированного мира. Потолок — 4 млрд компонентов одного типа.
+        std::vector<Slot> dense_;
         std::vector<uint32_t> sparse_;
 
     public:
-        using iterator = typename std::vector<T>::iterator;
-        using const_iterator = typename std::vector<T>::const_iterator;
+        using iterator = typename std::vector<Slot>::iterator;
+        using const_iterator = typename std::vector<Slot>::const_iterator;
 
         SparseSet() = default;
         ~SparseSet() override = default;
@@ -75,11 +79,10 @@ namespace engine
             }
 
             size_t index = dense_.size();
-            dense_.emplace_back(std::forward<Args>(args)...);
-            dense_.back().owner = owner;
+            dense_.emplace_back(owner, std::forward<Args>(args)...);
             sparse_[owner] = static_cast<uint32_t>(index);
 
-            return dense_.back();
+            return dense_.back().data;
         }
 
         T *get(EntityId owner)
@@ -91,7 +94,7 @@ namespace engine
             if (index == INVALID_INDEX)
                 return nullptr;
 
-            return &dense_[index];
+            return &dense_[index].data;
         }
 
         const T *get(EntityId owner) const
@@ -103,7 +106,7 @@ namespace engine
             if (index == INVALID_INDEX)
                 return nullptr;
 
-            return &dense_[index];
+            return &dense_[index].data;
         }
 
         EntityId getOwner(size_t index) const
@@ -115,16 +118,28 @@ namespace engine
         T &rawData(size_t index)
         {
             assert(index < dense_.size());
-            return dense_[index];
+            return dense_[index].data;
         }
 
         const T &rawData(size_t index) const
         {
             assert(index < dense_.size());
+            return dense_[index].data;
+        }
+
+        Slot &rawSlot(size_t index)
+        {
+            assert(index < dense_.size());
             return dense_[index];
         }
 
-        // Итерация
+        const Slot &rawSlot(size_t index) const
+        {
+            assert(index < dense_.size());
+            return dense_[index];
+        }
+
+        // Итерация по слотам (Slot { EntityId owner, T data })
         iterator begin() { return dense_.begin(); }
         iterator end() { return dense_.end(); }
         const_iterator begin() const { return dense_.begin(); }
@@ -140,16 +155,9 @@ namespace engine
             size_t index = sparse_[owner];
             size_t last = dense_.size() - 1;
 
-            // lastOwner читаем ДО move: после std::move(dense_[last]) для
-            // тривиально-копируемых типов dense_[last] остаётся валидным, но
-            // в moved-from состоянии; явно сохраняем значение, чтобы не зависеть
-            // от семантики move-assignment пользовательского T.
             EntityId lastOwner = dense_[last].owner;
 
             dense_[index] = std::move(dense_[last]);
-            // dense_[index].owner после move == lastOwner (move-assign для
-            // aggregate просто копирует), но оставляем явный set для надёжности.
-            dense_[index].owner = lastOwner;
             sparse_[lastOwner] = static_cast<uint32_t>(index);
 
             dense_.pop_back();

@@ -86,21 +86,19 @@ namespace
                   << " | ops=" << ops << "\n";
     }
 
-    // Компоненты. owner обязателен и обязан быть первым полем — см. шапку файла.
-    constexpr engine::EntityId NO_OWNER = engine::InvalidEntity;
-
-    struct Pos    { engine::EntityId owner{NO_OWNER}; float x{0}, y{0}; };
-    struct Vel    { engine::EntityId owner{NO_OWNER}; float vx{0}, vy{0}; };
-    struct Tag    { engine::EntityId owner{NO_OWNER}; std::uint32_t v{0}; };
-    struct Extra  { engine::EntityId owner{NO_OWNER}; std::uint8_t pad{0}; };
-    struct ReqA   { engine::EntityId owner{NO_OWNER}; float w{0}; };
-    struct ReqB   { engine::EntityId owner{NO_OWNER}; float w{0}; };
-    struct ReqC   { engine::EntityId owner{NO_OWNER}; float w{0}; };
-    struct ReqD   { engine::EntityId owner{NO_OWNER}; float w{0}; };
-    struct Health { engine::EntityId owner{NO_OWNER}; float hp{0}; };
-    struct Armor  { engine::EntityId owner{NO_OWNER}; float def{0}; };
-    struct Mana   { engine::EntityId owner{NO_OWNER}; float mp{0}; };
-    struct Marker { engine::EntityId owner{NO_OWNER}; std::uint8_t flag{0}; };
+    // Компоненты — чистые POD-структуры без метаданных движка (без поля owner)
+    struct Pos    { float x{0}, y{0}; };
+    struct Vel    { float vx{0}, vy{0}; };
+    struct Tag    { std::uint32_t v{0}; };
+    struct Extra  { std::uint8_t pad{0}; };
+    struct ReqA   { float w{0}; };
+    struct ReqB   { float w{0}; };
+    struct ReqC   { float w{0}; };
+    struct ReqD   { float w{0}; };
+    struct Health { float hp{0}; };
+    struct Armor  { float def{0}; };
+    struct Mana   { float mp{0}; };
+    struct Marker { std::uint8_t flag{0}; };
 }
 
 int main(int argc, char **argv)
@@ -186,7 +184,7 @@ int main(int argc, char **argv)
             world.addComponent<Pos>(e, Pos{});
             world.addComponent<Vel>(e, Vel{});
             if ((i & 1u) == 0u)
-                world.addComponent<Tag>(e, Tag{NO_OWNER, static_cast<std::uint32_t>(i)});
+                world.addComponent<Tag>(e, Tag{static_cast<std::uint32_t>(i)});
         }
 
         double total = 0.0;
@@ -220,10 +218,10 @@ int main(int argc, char **argv)
         for (std::size_t i = 0; i < args.entities; ++i)
         {
             auto e = world.createEntity();
-            world.addComponent<ReqA>(e, ReqA{NO_OWNER, static_cast<float>(i)});
-            world.addComponent<ReqB>(e, ReqB{NO_OWNER, static_cast<float>(i)});
-            world.addComponent<ReqC>(e, ReqC{NO_OWNER, static_cast<float>(i)});
-            world.addComponent<ReqD>(e, ReqD{NO_OWNER, static_cast<float>(i)});
+            world.addComponent<ReqA>(e, ReqA{static_cast<float>(i)});
+            world.addComponent<ReqB>(e, ReqB{static_cast<float>(i)});
+            world.addComponent<ReqC>(e, ReqC{static_cast<float>(i)});
+            world.addComponent<ReqD>(e, ReqD{static_cast<float>(i)});
             if ((i & 7u) == 0u)
                 world.addComponent<Extra>(e, Extra{});
         }
@@ -291,7 +289,7 @@ int main(int argc, char **argv)
         {
             auto e = world.createEntity();
             eids.push_back(e);
-            world.addComponent<Pos>(e, Pos{NO_OWNER, static_cast<float>(i), static_cast<float>(i)});
+            world.addComponent<Pos>(e, Pos{static_cast<float>(i), static_cast<float>(i)});
         }
         std::shuffle(eids.begin(), eids.end(), rng);
 
@@ -320,16 +318,16 @@ int main(int argc, char **argv)
         for (std::size_t i = 0; i < args.entities; ++i)
         {
             auto e = world.createEntity();
-            world.addComponent<Pos>(e, Pos{NO_OWNER, static_cast<float>(i), 0.0f});
-            world.addComponent<Vel>(e, Vel{NO_OWNER, 1.0f, 0.0f});
+            world.addComponent<Pos>(e, Pos{static_cast<float>(i), 0.0f});
+            world.addComponent<Vel>(e, Vel{1.0f, 0.0f});
             if ((i & 1u) == 0u)
-                world.addComponent<Tag>(e, Tag{NO_OWNER, static_cast<std::uint32_t>(i)});
+                world.addComponent<Tag>(e, Tag{static_cast<std::uint32_t>(i)});
             if ((i & 3u) == 0u)
-                world.addComponent<Health>(e, Health{NO_OWNER, 100.0f});
+                world.addComponent<Health>(e, Health{100.0f});
             if ((i & 7u) == 0u)
-                world.addComponent<Armor>(e, Armor{NO_OWNER, 50.0f});
+                world.addComponent<Armor>(e, Armor{50.0f});
             if ((i & 15u) == 0u)
-                world.addComponent<Mana>(e, Mana{NO_OWNER, 20.0f});
+                world.addComponent<Mana>(e, Mana{20.0f});
         }
 
         double total = 0.0;

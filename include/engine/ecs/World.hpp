@@ -415,13 +415,13 @@ namespace engine
             }(std::make_index_sequence<N>{});
         }
 
-        // Указатель на J-й компонент сущности. Для ведущего контейнера это сам элемент,
+        // Указатель на J-й компонент сущности. Для ведущего контейнера это данные из drvSlot,
         // на котором мы стоим, — поиск по sparse не нужен.
-        template <std::size_t J, std::size_t I, typename Tup, typename DrvComp>
-        static auto pickPtr(Tup &cs, DrvComp &drvComp, EntityId id)
+        template <std::size_t J, std::size_t I, typename Tup, typename DrvSlot>
+        static auto pickPtr(Tup &cs, DrvSlot &drvSlot, EntityId id)
         {
             if constexpr (J == I)
-                return &drvComp;
+                return &drvSlot.data;
             else
                 return std::get<J>(cs).get(id);
         }
@@ -431,23 +431,22 @@ namespace engine
         static void eachDriven(Tup &cs, F &func)
         {
             // id нужен либо для поиска остальных компонентов, либо для колбэка с EntityId.
-            // Для each<T1> с колбэком без id чтение denseToEntity_ пропускается целиком.
+            // Для each<T1> с колбэком без id чтение sparse/owner пропускается целиком.
             constexpr bool kNeedId = (sizeof...(Ts) > 1) || std::is_invocable_v<F, EntityId, Ts &...>;
 
             auto &drv = std::get<I>(cs);
-            // Прямая итерация по dense-массиву, как было в развёрнутых версиях.
-            // id берём из самого компонента (SparseSet требует поле owner) — он лежит
-            // в той же кэш-линии, что и данные. Чтение denseToEntity_ было бы вторым
-            // потоком по памяти и заметно дороже на многокомпонентных запросах.
-            for (auto &drvComp : drv)
+            // Прямая итерация по dense-массиву слотов (Slot { owner, data }).
+            // id берём из слота компонента (drvSlot.owner) — он лежит в той же
+            // кэш-линии, что и данные data. Пользовательский тип Ts остаётся чистым POD.
+            for (auto &drvSlot : drv)
             {
                 EntityId id{};
                 if constexpr (kNeedId)
-                    id = drvComp.owner;
+                    id = drvSlot.owner;
 
                 auto ptrs = [&]<std::size_t... Js>(std::index_sequence<Js...>)
                 {
-                    return std::tuple{pickPtr<Js, I>(cs, drvComp, id)...};
+                    return std::tuple{pickPtr<Js, I>(cs, drvSlot, id)...};
                 }(std::index_sequence_for<Ts...>{});
 
                 const bool present = std::apply([](auto *...p)
