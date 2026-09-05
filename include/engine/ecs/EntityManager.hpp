@@ -124,6 +124,16 @@ namespace engine
         /// @brief Верхняя граница индекса id + 1 (размер массива слотов), для кэшей по EntityId.
         size_t slotCount() const { return alive_.size(); }
 
+        /// @brief Предвыделение памяти под слоты сущностей и поколений.
+        void reserve(size_t count)
+        {
+            if (count > alive_.size())
+            {
+                alive_.resize(count, 0);
+                generations_.resize(count, 0);
+            }
+        }
+
         void reset()
         {
             alive_.clear();

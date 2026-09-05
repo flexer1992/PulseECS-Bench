@@ -506,6 +506,19 @@ def plot_social_preview(data):
     results = data["results"]
     scale_10m = "10000000"
 
+    my_get = results[scale_10m]["PulseECS"]["get_component"]
+    entt_get = results[scale_10m]["EnTT"]["get_component"]
+    get_speedup = entt_get / my_get
+
+    my_dest = results[scale_10m]["PulseECS"]["destroy_entity"]
+    entt_dest = results[scale_10m]["EnTT"]["destroy_entity"]
+    dest_speedup = entt_dest / my_dest
+
+    my_add = results[scale_10m]["PulseECS"]["add_components"]
+    entt_add = results[scale_10m]["EnTT"]["add_components"]
+
+    flecs_query = results[scale_10m]["flecs"]["query_filter"]
+
     fig = plt.figure(figsize=(12.8, 6.4), dpi=100)
     fig.patch.set_facecolor(PALETTE["bg_dark"])
 
@@ -528,25 +541,25 @@ def plot_social_preview(data):
 
     # Bullet takeaways
     takeaways = [
+        ("• Pure POD structs & zero-sized tags via [[no_unique_address]]", PALETTE["PulseECS"]),
+        ("• On-demand pool defragmentation recovers iteration to 1.77 ns/op", PALETTE["text_muted"]),
         ("• Empirical study on Apple M3 Pro with verified sink accumulation", PALETTE["text_muted"]),
-        ("• Sparse-Set vs Archetype: memory cache cliffs beyond 1M entities", PALETTE["text_muted"]),
-        ("• Realistic tradeoffs: no single ECS dominates every workload", PALETTE["PulseECS"]),
     ]
     for idx, (text, col) in enumerate(takeaways):
         frame.text(0.05, 0.38 - idx * 0.07, text, fontsize=11, color=col)
 
     # Badges row at bottom left
-    badges = ["C++20", "Release -O3", "Sparse-Set", "MIT License"]
+    badges = ["C++20", "Release -O3", "Sparse-Set", "Pure POD", "MIT License"]
     badge_x = 0.05
     for b in badges:
         frame.text(badge_x, 0.10, f"[{b}]", fontsize=10.5, fontweight="bold", color=PALETTE["PulseECS"])
-        badge_x += 0.12
+        badge_x += 0.11
 
     # Right Section: 3 High-Impact Cards
     cards_data = [
-        ("POINT LOOKUP (get<Pos>)", "7.8 ns", "5.4x vs EnTT (41.8 ns)", PALETTE["PulseECS"]),
-        ("ENTITY DESTRUCTION", "76 ns", "2.2x vs EnTT & flecs", PALETTE["PulseECS"]),
-        ("DENSE ARCHETYPE QUERY", "0.18 ns", "flecs chunked storage", PALETTE["flecs"]),
+        ("RANDOM LOOKUP (get<Pos>)", f"{my_get:.2f} ns", f"{get_speedup:.1f}x vs EnTT ({entt_get:.1f} ns)", PALETTE["PulseECS"]),
+        ("STRUCTURAL MUTATION (add)", f"{my_add:.2f} ns", f"vs EnTT ({entt_add:.1f} ns) & flecs (75 ns)", PALETTE["PulseECS"]),
+        ("DENSE ARCHETYPE QUERY", f"{flecs_query:.2f} ns", "flecs chunked storage", PALETTE["flecs"]),
     ]
 
     card_y = 0.65

@@ -174,6 +174,7 @@ namespace engine
         /// @brief Предвыделение памяти под сущности и маски компонентов
         void reserveEntities(size_t count)
         {
+            entities_.reserve(count);
             if (count > compMask_.size())
                 compMask_.resize(count, 0);
         }
