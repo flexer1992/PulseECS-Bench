@@ -422,6 +422,32 @@ int main(int argc, char **argv)
         std::ostringstream label;
         label << "frag 7sys mixed (alive=" << alive << ") avg (per hit)";
         printRow(label.str(), total / args.iterations, alive);
+
+        // ============================================================
+        // post-defrag 7 systems mixed update (дефрагментация через sort)
+        // ============================================================
+        double defragTime = timeSeconds([&] { world.defragment(); });
+        std::cout << "world.defragment(): " << defragTime * 1000.0 << " ms\n";
+
+        double postDefragTotal = 0.0;
+        for (std::size_t it = 0; it < args.iterations; ++it)
+        {
+            postDefragTotal += timeSeconds([&]
+            {
+                std::uint64_t local = 0;
+                world.each<Pos, Vel>([&](Pos &p, Vel &v) { p.x += v.vx; local += 1; });
+                world.each<Pos, Vel, Tag>([&](Pos &, Vel &, Tag &t) { t.v ^= 1u; local += 1; });
+                world.each<Health>([&](Health &h) { h.hp -= 0.001f; local += 1; });
+                world.each<Health, Armor>([&](Health &h, Armor &a) { h.hp += a.def * 0.0001f; local += 1; });
+                world.each<Pos, Tag>([&](Pos &p, Tag &t) { p.y += 0.01f * t.v; local += 1; });
+                world.each<Mana>([&](Mana &m) { m.mp -= 0.002f; local += 1; });
+                world.each<Vel, Armor>([&](Vel &v, Armor &a) { v.vx += a.def * 0.0001f; local += 1; });
+                (void)local; // намеренно не добавляем в sink, чтобы не нарушать совпадение sink
+            });
+        }
+        std::ostringstream defragLabel;
+        defragLabel << "post-defrag 7sys mixed (alive=" << alive << ") avg (per hit)";
+        printRow(defragLabel.str(), postDefragTotal / args.iterations, alive);
     }
 
     std::cout << "\nsink=" << sink << "\n";

@@ -498,6 +498,76 @@ def plot_hero_card(data):
     print(f"Generated: {out_path}")
 
 
+def plot_social_preview(data):
+    """
+    Generate exact 1280x640px GitHub Social Media Preview (Open Graph card).
+    Optimized for GitHub repository preview and LinkedIn link unfurls.
+    """
+    results = data["results"]
+    scale_10m = "10000000"
+
+    fig = plt.figure(figsize=(12.8, 6.4), dpi=100)
+    fig.patch.set_facecolor(PALETTE["bg_dark"])
+
+    # Outer decorative frame
+    frame = fig.add_axes([0.02, 0.04, 0.96, 0.92], facecolor=PALETTE["bg_card"])
+    frame.spines[:].set_color(PALETTE["border"])
+    frame.spines[:].set_linewidth(1.5)
+    frame.set_xticks([])
+    frame.set_yticks([])
+
+    # Left Section: Brand & Headline
+    frame.text(0.05, 0.86, "C++20 ENGINE CORE & ARCHITECTURE BENCHMARK",
+               fontsize=11, fontweight="bold", color=PALETTE["text_muted"])
+    frame.text(0.05, 0.70, "PulseECS",
+               fontsize=40, fontweight="heavy", color=PALETTE["PulseECS"])
+    frame.text(0.05, 0.58, "Benchmarking 6 ECS Frameworks up to 10M Entities",
+               fontsize=16, fontweight="bold", color=PALETTE["text_main"])
+    frame.text(0.05, 0.49, "PulseECS  •  EnTT  •  flecs  •  gaia-ecs  •  pico_ecs  •  EntityX",
+               fontsize=12, color=PALETTE["text_muted"])
+
+    # Bullet takeaways
+    takeaways = [
+        ("• Empirical study on Apple M3 Pro with verified sink accumulation", PALETTE["text_muted"]),
+        ("• Sparse-Set vs Archetype: memory cache cliffs beyond 1M entities", PALETTE["text_muted"]),
+        ("• Realistic tradeoffs: no single ECS dominates every workload", PALETTE["PulseECS"]),
+    ]
+    for idx, (text, col) in enumerate(takeaways):
+        frame.text(0.05, 0.38 - idx * 0.07, text, fontsize=11, color=col)
+
+    # Badges row at bottom left
+    badges = ["C++20", "Release -O3", "Sparse-Set", "MIT License"]
+    badge_x = 0.05
+    for b in badges:
+        frame.text(badge_x, 0.10, f"[{b}]", fontsize=10.5, fontweight="bold", color=PALETTE["PulseECS"])
+        badge_x += 0.12
+
+    # Right Section: 3 High-Impact Cards
+    cards_data = [
+        ("POINT LOOKUP (get<Pos>)", "7.8 ns", "5.4x vs EnTT (41.8 ns)", PALETTE["PulseECS"]),
+        ("ENTITY DESTRUCTION", "76 ns", "2.2x vs EnTT & flecs", PALETTE["PulseECS"]),
+        ("DENSE ARCHETYPE QUERY", "0.18 ns", "flecs chunked storage", PALETTE["flecs"]),
+    ]
+
+    card_y = 0.65
+    for title, metric, sub, accent in cards_data:
+        box = fig.add_axes([0.60, card_y, 0.35, 0.22], facecolor=PALETTE["bg_dark"])
+        box.spines[:].set_color(PALETTE["border"])
+        box.spines[:].set_linewidth(1.0)
+        box.set_xticks([])
+        box.set_yticks([])
+
+        box.text(0.08, 0.76, title, fontsize=9.5, fontweight="bold", color=PALETTE["text_muted"])
+        box.text(0.08, 0.38, metric, fontsize=22, fontweight="heavy", color=accent)
+        box.text(0.08, 0.12, sub, fontsize=10, color=PALETTE["text_muted"])
+        card_y -= 0.27
+
+    out_path = ASSETS_DIR / "github_social_preview.png"
+    plt.savefig(out_path, dpi=100, facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close()
+    print(f"Generated: {out_path} (exact 1280x640 px)")
+
+
 def main():
     ASSETS_DIR.mkdir(parents=True, exist_ok=True)
     setup_dark_style()
@@ -509,6 +579,7 @@ def main():
     plot_archetype_vs_sparseset(data)
     plot_fragmentation_impact(data)
     plot_hero_card(data)
+    plot_social_preview(data)
     print("All charts generated successfully in assets/!")
 
 

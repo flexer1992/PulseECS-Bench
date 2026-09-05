@@ -120,7 +120,10 @@ namespace engine
                 return;
             }
             if (id >= compMask_.size())
-                compMask_.resize(id + 1, 0);
+            {
+                const size_t newCap = std::max(static_cast<size_t>(id + 1), compMask_.size() * 2);
+                compMask_.resize(newCap, 0);
+            }
             compMask_[id] |= (std::uint64_t(1) << typeId);
         }
         // Опционально: имена типов (для дебага / профилирования)
@@ -153,6 +156,26 @@ namespace engine
         EntityId createEntity()
         {
             return entities_.create();
+        }
+
+        /// @brief Пакетное создание N сущностей
+        std::vector<EntityId> createEntities(size_t count)
+        {
+            return entities_.createBulk(count);
+        }
+
+        /// @brief Пакетное создание N сущностей с записью в итератор
+        template <typename OutputIt>
+        void createEntities(size_t count, OutputIt out)
+        {
+            entities_.create(count, out);
+        }
+
+        /// @brief Предвыделение памяти под сущности и маски компонентов
+        void reserveEntities(size_t count)
+        {
+            if (count > compMask_.size())
+                compMask_.resize(count, 0);
         }
 
         void destroyEntity(EntityId id)
@@ -344,6 +367,30 @@ namespace engine
         SparseSet<T> &each()
         {
             return getContainer<T>();
+        }
+
+        /// @brief Дефрагментация пула конкретного компонента
+        template <typename T>
+        void sort()
+        {
+            getContainer<T>().sort();
+        }
+
+        /// @brief Дефрагментация пула с пользовательским компаратором
+        template <typename T, typename Compare>
+        void sort(Compare &&comp)
+        {
+            getContainer<T>().sort(std::forward<Compare>(comp));
+        }
+
+        /// @brief Дефрагментирует ВСЕ зарегистрированные пулы компонентов
+        void defragment()
+        {
+            for (auto &container : containers_)
+            {
+                if (container)
+                    container->sort();
+            }
         }
 
         void clear()

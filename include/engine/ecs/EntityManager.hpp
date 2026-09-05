@@ -39,8 +39,9 @@ namespace engine
 
             if (id >= alive_.size())
             {
-                alive_.resize(id + 1, 0);
-                generations_.resize(id + 1, 0);
+                const size_t newCap = std::max(static_cast<size_t>(id + 1), alive_.size() * 2);
+                alive_.resize(newCap, 0);
+                generations_.resize(newCap, 0);
             }
 
             alive_[id] = 1;
@@ -48,6 +49,56 @@ namespace engine
 
             generations_[id]++;
             return id;
+        }
+
+        /// @brief Пакетное создание N сущностей
+        template <typename OutputIt>
+        void create(size_t count, OutputIt out)
+        {
+            if (count == 0)
+                return;
+
+            size_t fromRecycled = std::min(count, recycled_.size());
+            for (size_t i = 0; i < fromRecycled; ++i)
+            {
+                EntityId id = recycled_.back();
+                recycled_.pop_back();
+                alive_[id] = 1;
+                generations_[id]++;
+                *out++ = id;
+            }
+
+            size_t remaining = count - fromRecycled;
+            if (remaining > 0)
+            {
+                EntityId startId = nextId_;
+                EntityId endId = nextId_ + static_cast<EntityId>(remaining);
+                nextId_ = endId;
+
+                if (endId > alive_.size())
+                {
+                    const size_t newCap = std::max(static_cast<size_t>(endId), alive_.size() * 2);
+                    alive_.resize(newCap, 0);
+                    generations_.resize(newCap, 0);
+                }
+
+                for (EntityId id = startId; id < endId; ++id)
+                {
+                    alive_[id] = 1;
+                    generations_[id]++;
+                    *out++ = id;
+                }
+            }
+
+            aliveCount_ += count;
+        }
+
+        std::vector<EntityId> createBulk(size_t count)
+        {
+            std::vector<EntityId> ids;
+            ids.reserve(count);
+            create(count, std::back_inserter(ids));
+            return ids;
         }
 
         void destroy(EntityId id)

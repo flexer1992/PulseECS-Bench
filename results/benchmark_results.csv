@@ -1,337 +1,337 @@
 scale,benchmark,operation_id,operation_name,ns_per_op
-20000,PulseECS,add_components,add components (Pos+Vel+50%Tag),17.2212
-20000,PulseECS,each_packed,"each<Pos,Vel>",1.65791
-20000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.19416
-20000,PulseECS,query_filter,query<4> without<1>,3.03049
-20000,PulseECS,destroy_entity,destroyEntity,33.9617
-20000,PulseECS,get_component,get<Pos>,0.93543
-20000,PulseECS,systems_packed,7 systems mixed (full),4.87708
-20000,PulseECS,systems_frag,frag 7sys mixed (alive),5.70601
-20000,EnTT,add_components,add components (Pos+Vel+50%Tag),25.8705
-20000,EnTT,each_packed,"each<Pos,Vel>",1.06916
-20000,EnTT,each_sparse,"each<Pos,Vel,Tag>",2.48082
-20000,EnTT,query_filter,query<4> without<1>,22.0562
-20000,EnTT,destroy_entity,destroyEntity,25.82
-20000,EnTT,get_component,get<Pos>,3.88375
-20000,EnTT,systems_packed,7 systems mixed (full),4.25627
-20000,EnTT,systems_frag,frag 7sys mixed (alive),3.91342
-20000,flecs,add_components,add components (Pos+Vel+50%Tag),95.5457
-20000,flecs,each_packed,"each<Pos,Vel>",0.32709
-20000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.46416
-20000,flecs,query_filter,query<4> without<1>,0.23
-20000,flecs,destroy_entity,destroyEntity,35.2458
-20000,flecs,get_component,get<Pos>,43.33
-20000,flecs,systems_packed,7 systems mixed (full),4.55084
-20000,flecs,systems_frag,frag 7sys mixed (alive),1.29444
-20000,EntityX,add_components,add components (Pos+Vel+50%Tag),16.7483
-20000,EntityX,each_packed,"each<Pos,Vel>",3.99332
-20000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.73664
-20000,EntityX,query_filter,query<4> without<1>,10.0181
-20000,EntityX,destroy_entity,destroyEntity,17.1629
-20000,EntityX,get_component,get<Pos>,2.66292
-20000,EntityX,systems_packed,7 systems mixed (full),18.4012
-20000,EntityX,systems_frag,frag 7sys mixed (alive),14.3074
-20000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),68.9652
-20000,gaia-ecs,each_packed,"each<Pos,Vel>",0.38084
-20000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.49832
-20000,gaia-ecs,query_filter,query<4> without<1>,0.392846
-20000,gaia-ecs,destroy_entity,destroyEntity,69.31
-20000,gaia-ecs,get_component,get<Pos>,8.56916
-20000,gaia-ecs,systems_packed,7 systems mixed (full),2.1325
-20000,gaia-ecs,systems_frag,frag 7sys mixed (alive),1.77918
-20000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.21016
-20000,pico_ecs,each_packed,"each<Pos,Vel>",1.16375
-20000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.24666
-20000,pico_ecs,query_filter,query<4> without<1>,1.41475
-20000,pico_ecs,destroy_entity,destroyEntity,6.65832
-20000,pico_ecs,get_component,get<Pos>,0.65667
-20000,pico_ecs,systems_packed,7 systems mixed (full),2.21293
-20000,pico_ecs,systems_frag,frag 7sys mixed (alive),3.01203
-100000,PulseECS,add_components,add components (Pos+Vel+50%Tag),11.3906
-100000,PulseECS,each_packed,"each<Pos,Vel>",0.568752
-100000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.3045
-100000,PulseECS,query_filter,query<4> without<1>,2.96038
-100000,PulseECS,destroy_entity,destroyEntity,16.8352
-100000,PulseECS,get_component,get<Pos>,1.31533
-100000,PulseECS,systems_packed,7 systems mixed (full),2.136
-100000,PulseECS,systems_frag,frag 7sys mixed (alive),2.57398
-100000,EnTT,add_components,add components (Pos+Vel+50%Tag),10.1904
-100000,EnTT,each_packed,"each<Pos,Vel>",1.15842
-100000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.26966
-100000,EnTT,query_filter,query<4> without<1>,4.84295
-100000,EnTT,destroy_entity,destroyEntity,76.4455
-100000,EnTT,get_component,get<Pos>,4.71292
-100000,EnTT,systems_packed,7 systems mixed (full),5.28967
-100000,EnTT,systems_frag,frag 7sys mixed (alive),4.92287
-100000,flecs,add_components,add components (Pos+Vel+50%Tag),79.1605
-100000,flecs,each_packed,"each<Pos,Vel>",0.218914
-100000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.27834
-100000,flecs,query_filter,query<4> without<1>,0.195426
-100000,flecs,destroy_entity,destroyEntity,55.8665
-100000,flecs,get_component,get<Pos>,15.5923
-100000,flecs,systems_packed,7 systems mixed (full),0.907332
-100000,flecs,systems_frag,frag 7sys mixed (alive),0.871949
-100000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.5803
-100000,EntityX,each_packed,"each<Pos,Vel>",3.98833
-100000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.87316
-100000,EntityX,query_filter,query<4> without<1>,9.73962
-100000,EntityX,destroy_entity,destroyEntity,18.0858
-100000,EntityX,get_component,get<Pos>,3.009
-100000,EntityX,systems_packed,7 systems mixed (full),11.1725
-100000,EntityX,systems_frag,frag 7sys mixed (alive),14.4035
-100000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),47.0427
-100000,gaia-ecs,each_packed,"each<Pos,Vel>",0.316836
-100000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.423664
-100000,gaia-ecs,query_filter,query<4> without<1>,0.415143
-100000,gaia-ecs,destroy_entity,destroyEntity,155.526
-100000,gaia-ecs,get_component,get<Pos>,10.7996
-100000,gaia-ecs,systems_packed,7 systems mixed (full),0.82825
-100000,gaia-ecs,systems_frag,frag 7sys mixed (alive),0.911018
-100000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.39577
-100000,pico_ecs,each_packed,"each<Pos,Vel>",0.754336
-100000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.253
-100000,pico_ecs,query_filter,query<4> without<1>,1.44486
-100000,pico_ecs,destroy_entity,destroyEntity,8.1465
-100000,pico_ecs,get_component,get<Pos>,0.966082
-100000,pico_ecs,systems_packed,7 systems mixed (full),2.37917
-100000,pico_ecs,systems_frag,frag 7sys mixed (alive),3.20259
-200000,PulseECS,add_components,add components (Pos+Vel+50%Tag),11.2063
-200000,PulseECS,each_packed,"each<Pos,Vel>",1.12238
-200000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.17933
-200000,PulseECS,query_filter,query<4> without<1>,3.08
-200000,PulseECS,destroy_entity,destroyEntity,21.9165
-200000,PulseECS,get_component,get<Pos>,1.42937
-200000,PulseECS,systems_packed,7 systems mixed (full),1.81992
-200000,PulseECS,systems_frag,frag 7sys mixed (alive),2.29167
-200000,EnTT,add_components,add components (Pos+Vel+50%Tag),10.4743
-200000,EnTT,each_packed,"each<Pos,Vel>",1.21617
-200000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.13983
-200000,EnTT,query_filter,query<4> without<1>,4.57376
-200000,EnTT,destroy_entity,destroyEntity,56.127
-200000,EnTT,get_component,get<Pos>,8.96675
-200000,EnTT,systems_packed,7 systems mixed (full),4.889
-200000,EnTT,systems_frag,frag 7sys mixed (alive),6.86291
-200000,flecs,add_components,add components (Pos+Vel+50%Tag),86.4638
-200000,flecs,each_packed,"each<Pos,Vel>",0.243416
-200000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.308
-200000,flecs,query_filter,query<4> without<1>,0.188811
-200000,flecs,destroy_entity,destroyEntity,150.884
-200000,flecs,get_component,get<Pos>,18.4561
-200000,flecs,systems_packed,7 systems mixed (full),0.619251
-200000,flecs,systems_frag,frag 7sys mixed (alive),0.517731
-200000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.1854
-200000,EntityX,each_packed,"each<Pos,Vel>",3.97879
-200000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.60083
-200000,EntityX,query_filter,query<4> without<1>,9.55443
-200000,EntityX,destroy_entity,destroyEntity,29.7515
-200000,EntityX,get_component,get<Pos>,2.58625
-200000,EntityX,systems_packed,7 systems mixed (full),11.4342
-200000,EntityX,systems_frag,frag 7sys mixed (alive),26.1439
-200000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),62.0272
-200000,gaia-ecs,each_packed,"each<Pos,Vel>",0.410251
-200000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.35792
-200000,gaia-ecs,query_filter,query<4> without<1>,0.640096
-200000,gaia-ecs,destroy_entity,destroyEntity,134.659
-200000,gaia-ecs,get_component,get<Pos>,12.3749
-200000,gaia-ecs,systems_packed,7 systems mixed (full),0.97325
-200000,gaia-ecs,systems_frag,frag 7sys mixed (alive),0.998519
-200000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.22797
-200000,pico_ecs,each_packed,"each<Pos,Vel>",0.726208
-200000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.27042
-200000,pico_ecs,query_filter,query<4> without<1>,1.48176
-200000,pico_ecs,destroy_entity,destroyEntity,8.85508
-200000,pico_ecs,get_component,get<Pos>,1.03763
-200000,pico_ecs,systems_packed,7 systems mixed (full),2.26275
-200000,pico_ecs,systems_frag,frag 7sys mixed (alive),3.34037
-500000,PulseECS,add_components,add components (Pos+Vel+50%Tag),13.3178
-500000,PulseECS,each_packed,"each<Pos,Vel>",0.66225
-500000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.2465
-500000,PulseECS,query_filter,query<4> without<1>,3.11737
-500000,PulseECS,destroy_entity,destroyEntity,107.402
-500000,PulseECS,get_component,get<Pos>,6.1591
-500000,PulseECS,systems_packed,7 systems mixed (full),2.71242
-500000,PulseECS,systems_frag,frag 7sys mixed (alive),3.82069
-500000,EnTT,add_components,add components (Pos+Vel+50%Tag),14.4904
-500000,EnTT,each_packed,"each<Pos,Vel>",2.20763
-500000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.90763
-500000,EnTT,query_filter,query<4> without<1>,5.15929
-500000,EnTT,destroy_entity,destroyEntity,147.544
-500000,EnTT,get_component,get<Pos>,15.8365
-500000,EnTT,systems_packed,7 systems mixed (full),5.55443
-500000,EnTT,systems_frag,frag 7sys mixed (alive),8.97209
-500000,flecs,add_components,add components (Pos+Vel+50%Tag),86.0074
-500000,flecs,each_packed,"each<Pos,Vel>",0.25015
-500000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.398267
-500000,flecs,query_filter,query<4> without<1>,0.22459
-500000,flecs,destroy_entity,destroyEntity,159.917
-500000,flecs,get_component,get<Pos>,69.2914
-500000,flecs,systems_packed,7 systems mixed (full),0.608967
-500000,flecs,systems_frag,frag 7sys mixed (alive),0.668964
-500000,EntityX,add_components,add components (Pos+Vel+50%Tag),14.4964
-500000,EntityX,each_packed,"each<Pos,Vel>",5.7907
-500000,EntityX,each_sparse,"each<Pos,Vel,Tag>",7.01307
-500000,EntityX,query_filter,query<4> without<1>,13.376
-500000,EntityX,destroy_entity,destroyEntity,93.9797
-500000,EntityX,get_component,get<Pos>,21.8369
-500000,EntityX,systems_packed,7 systems mixed (full),16.1429
-500000,EntityX,systems_frag,frag 7sys mixed (alive),19.4195
-500000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),59.4528
-500000,gaia-ecs,each_packed,"each<Pos,Vel>",0.672216
-500000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.04303
-500000,gaia-ecs,query_filter,query<4> without<1>,1.25333
-500000,gaia-ecs,destroy_entity,destroyEntity,273.899
-500000,gaia-ecs,get_component,get<Pos>,32.5883
-500000,gaia-ecs,systems_packed,7 systems mixed (full),3.5814
-500000,gaia-ecs,systems_frag,frag 7sys mixed (alive),3.18637
-500000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.85597
-500000,pico_ecs,each_packed,"each<Pos,Vel>",0.958183
-500000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.30657
-500000,pico_ecs,query_filter,query<4> without<1>,1.57771
-500000,pico_ecs,destroy_entity,destroyEntity,14.7483
-500000,pico_ecs,get_component,get<Pos>,1.41668
-500000,pico_ecs,systems_packed,7 systems mixed (full),2.65953
-500000,pico_ecs,systems_frag,frag 7sys mixed (alive),5.67376
-1000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),12.3742
-1000000,PulseECS,each_packed,"each<Pos,Vel>",0.639903
-1000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.22528
-1000000,PulseECS,query_filter,query<4> without<1>,2.99352
-1000000,PulseECS,destroy_entity,destroyEntity,56.1987
-1000000,PulseECS,get_component,get<Pos>,4.3619
-1000000,PulseECS,systems_packed,7 systems mixed (full),2.28428
-1000000,PulseECS,systems_frag,frag 7sys mixed (alive),6.10394
-1000000,EnTT,add_components,add components (Pos+Vel+50%Tag),10.8702
-1000000,EnTT,each_packed,"each<Pos,Vel>",1.48621
-1000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",4.10558
-1000000,EnTT,query_filter,query<4> without<1>,5.34935
-1000000,EnTT,destroy_entity,destroyEntity,140.818
-1000000,EnTT,get_component,get<Pos>,23.0869
-1000000,EnTT,systems_packed,7 systems mixed (full),6.35111
-1000000,EnTT,systems_frag,frag 7sys mixed (alive),13.8565
-1000000,flecs,add_components,add components (Pos+Vel+50%Tag),74.9084
-1000000,flecs,each_packed,"each<Pos,Vel>",0.384861
-1000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.502055
-1000000,flecs,query_filter,query<4> without<1>,0.194318
-1000000,flecs,destroy_entity,destroyEntity,133.237
-1000000,flecs,get_component,get<Pos>,49.3634
-1000000,flecs,systems_packed,7 systems mixed (full),0.663375
-1000000,flecs,systems_frag,frag 7sys mixed (alive),0.543349
-1000000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.4806
-1000000,EntityX,each_packed,"each<Pos,Vel>",4.10299
-1000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.93072
-1000000,EntityX,query_filter,query<4> without<1>,9.59505
-1000000,EntityX,destroy_entity,destroyEntity,27.6836
-1000000,EntityX,get_component,get<Pos>,10.7969
-1000000,EntityX,systems_packed,7 systems mixed (full),11.9346
-1000000,EntityX,systems_frag,frag 7sys mixed (alive),14.6782
-1000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),46.6499
-1000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.762972
-1000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.25867
-1000000,gaia-ecs,query_filter,query<4> without<1>,0.794984
-1000000,gaia-ecs,destroy_entity,destroyEntity,214.607
-1000000,gaia-ecs,get_component,get<Pos>,23.6112
-1000000,gaia-ecs,systems_packed,7 systems mixed (full),2.32371
-1000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),2.91711
-1000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.2927
-1000000,pico_ecs,each_packed,"each<Pos,Vel>",0.797306
-1000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.45183
-1000000,pico_ecs,query_filter,query<4> without<1>,1.44357
-1000000,pico_ecs,destroy_entity,destroyEntity,10.7259
-1000000,pico_ecs,get_component,get<Pos>,1.57626
-1000000,pico_ecs,systems_packed,7 systems mixed (full),2.49817
-1000000,pico_ecs,systems_frag,frag 7sys mixed (alive),8.99236
-2000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),11.945
-2000000,PulseECS,each_packed,"each<Pos,Vel>",0.600326
-2000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.453
-2000000,PulseECS,query_filter,query<4> without<1>,3.16881
-2000000,PulseECS,destroy_entity,destroyEntity,66.0913
-2000000,PulseECS,get_component,get<Pos>,5.70881
-2000000,PulseECS,systems_packed,7 systems mixed (full),2.43669
-2000000,PulseECS,systems_frag,frag 7sys mixed (alive),6.78927
-2000000,EnTT,add_components,add components (Pos+Vel+50%Tag),10.0658
-2000000,EnTT,each_packed,"each<Pos,Vel>",1.41777
-2000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.88239
-2000000,EnTT,query_filter,query<4> without<1>,4.7568
-2000000,EnTT,destroy_entity,destroyEntity,164.254
-2000000,EnTT,get_component,get<Pos>,35.3311
-2000000,EnTT,systems_packed,7 systems mixed (full),5.97663
-2000000,EnTT,systems_frag,frag 7sys mixed (alive),13.9901
-2000000,flecs,add_components,add components (Pos+Vel+50%Tag),74.5256
-2000000,flecs,each_packed,"each<Pos,Vel>",0.368326
-2000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.651986
-2000000,flecs,query_filter,query<4> without<1>,0.276833
-2000000,flecs,destroy_entity,destroyEntity,160.186
-2000000,flecs,get_component,get<Pos>,79.4888
-2000000,flecs,systems_packed,7 systems mixed (full),0.767563
-2000000,flecs,systems_frag,frag 7sys mixed (alive),0.557446
-2000000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.4186
-2000000,EntityX,each_packed,"each<Pos,Vel>",4.04404
-2000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.87738
-2000000,EntityX,query_filter,query<4> without<1>,9.8244
-2000000,EntityX,destroy_entity,destroyEntity,67.786
-2000000,EntityX,get_component,get<Pos>,15.5813
-2000000,EntityX,systems_packed,7 systems mixed (full),12.0839
-2000000,EntityX,systems_frag,frag 7sys mixed (alive),15.2608
-2000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),48.1711
-2000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.906986
-2000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.43064
-2000000,gaia-ecs,query_filter,query<4> without<1>,1.08215
-2000000,gaia-ecs,destroy_entity,destroyEntity,255.76
-2000000,gaia-ecs,get_component,get<Pos>,24.7805
-2000000,gaia-ecs,systems_packed,7 systems mixed (full),2.98498
-2000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),3.09637
-2000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.33289
-2000000,pico_ecs,each_packed,"each<Pos,Vel>",0.795021
-2000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.35985
-2000000,pico_ecs,query_filter,query<4> without<1>,1.45473
-2000000,pico_ecs,destroy_entity,destroyEntity,25.2133
-2000000,pico_ecs,get_component,get<Pos>,4.25757
-2000000,pico_ecs,systems_packed,7 systems mixed (full),2.69845
-2000000,pico_ecs,systems_frag,frag 7sys mixed (alive),13.8644
-10000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),15.727
-10000000,PulseECS,each_packed,"each<Pos,Vel>",0.650042
-10000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.41861
-10000000,PulseECS,query_filter,query<4> without<1>,4.43911
-10000000,PulseECS,destroy_entity,destroyEntity,76.0302
-10000000,PulseECS,get_component,get<Pos>,7.76886
-10000000,PulseECS,systems_packed,7 systems mixed (full),2.38336
-10000000,PulseECS,systems_frag,frag 7sys mixed (alive),11.978
-10000000,EnTT,add_components,add components (Pos+Vel+50%Tag),11.0766
-10000000,EnTT,each_packed,"each<Pos,Vel>",1.65777
-10000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",4.70776
-10000000,EnTT,query_filter,query<4> without<1>,5.17703
-10000000,EnTT,destroy_entity,destroyEntity,165.527
-10000000,EnTT,get_component,get<Pos>,41.7774
-10000000,EnTT,systems_packed,7 systems mixed (full),6.64578
-10000000,EnTT,systems_frag,frag 7sys mixed (alive),23.9752
-10000000,flecs,add_components,add components (Pos+Vel+50%Tag),74.7193
-10000000,flecs,each_packed,"each<Pos,Vel>",0.519958
-10000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.262675
-10000000,flecs,query_filter,query<4> without<1>,0.178995
-10000000,flecs,destroy_entity,destroyEntity,160.588
-10000000,flecs,get_component,get<Pos>,82.2953
-10000000,flecs,systems_packed,7 systems mixed (full),0.628692
-10000000,flecs,systems_frag,frag 7sys mixed (alive),0.476148
-10000000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.2558
-10000000,EntityX,each_packed,"each<Pos,Vel>",4.02255
-10000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.84373
-10000000,EntityX,query_filter,query<4> without<1>,9.72177
-10000000,EntityX,destroy_entity,destroyEntity,71.6471
-10000000,EntityX,get_component,get<Pos>,18.3186
-10000000,EntityX,systems_packed,7 systems mixed (full),11.7861
-10000000,EntityX,systems_frag,frag 7sys mixed (alive),14.9789
-10000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),45.9431
-10000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.751875
-10000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.33331
-10000000,gaia-ecs,query_filter,query<4> without<1>,0.863667
-10000000,gaia-ecs,destroy_entity,destroyEntity,318.265
-10000000,gaia-ecs,get_component,get<Pos>,35.0759
-10000000,gaia-ecs,systems_packed,7 systems mixed (full),2.95892
-10000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),2.85795
-10000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.23684
-10000000,pico_ecs,each_packed,"each<Pos,Vel>",0.900125
-10000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.31236
-10000000,pico_ecs,query_filter,query<4> without<1>,1.46704
-10000000,pico_ecs,destroy_entity,destroyEntity,30.7313
-10000000,pico_ecs,get_component,get<Pos>,5.68407
-10000000,pico_ecs,systems_packed,7 systems mixed (full),2.5861
-10000000,pico_ecs,systems_frag,frag 7sys mixed (alive),18.6452
+20000,PulseECS,add_components,add components (Pos+Vel+50%Tag),6.14183
+20000,PulseECS,each_packed,"each<Pos,Vel>",0.54
+20000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.07666
+20000,PulseECS,query_filter,query<4> without<1>,2.50286
+20000,PulseECS,destroy_entity,destroyEntity,10.9908
+20000,PulseECS,get_component,get<Pos>,0.72208
+20000,PulseECS,systems_packed,7 systems mixed (full),1.92583
+20000,PulseECS,systems_frag,frag 7sys mixed (alive),1.59722
+20000,EnTT,add_components,add components (Pos+Vel+50%Tag),9.39484
+20000,EnTT,each_packed,"each<Pos,Vel>",1.03668
+20000,EnTT,each_sparse,"each<Pos,Vel,Tag>",2.21418
+20000,EnTT,query_filter,query<4> without<1>,4.46525
+20000,EnTT,destroy_entity,destroyEntity,21.9479
+20000,EnTT,get_component,get<Pos>,3.32417
+20000,EnTT,systems_packed,7 systems mixed (full),3.90791
+20000,EnTT,systems_frag,frag 7sys mixed (alive),3.3264
+20000,flecs,add_components,add components (Pos+Vel+50%Tag),75.4907
+20000,flecs,each_packed,"each<Pos,Vel>",0.26166
+20000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.47748
+20000,flecs,query_filter,query<4> without<1>,0.202857
+20000,flecs,destroy_entity,destroyEntity,27.075
+20000,flecs,get_component,get<Pos>,9.46833
+20000,flecs,systems_packed,7 systems mixed (full),0.9525
+20000,flecs,systems_frag,frag 7sys mixed (alive),0.729622
+20000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.7545
+20000,EntityX,each_packed,"each<Pos,Vel>",3.55375
+20000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.7825
+20000,EntityX,query_filter,query<4> without<1>,9.40333
+20000,EntityX,destroy_entity,destroyEntity,15.7504
+20000,EntityX,get_component,get<Pos>,1.93167
+20000,EntityX,systems_packed,7 systems mixed (full),11.5046
+20000,EntityX,systems_frag,frag 7sys mixed (alive),13.3338
+20000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),42.9295
+20000,gaia-ecs,each_packed,"each<Pos,Vel>",0.31167
+20000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.3275
+20000,gaia-ecs,query_filter,query<4> without<1>,0.314286
+20000,gaia-ecs,destroy_entity,destroyEntity,55.3062
+20000,gaia-ecs,get_component,get<Pos>,6.21416
+20000,gaia-ecs,systems_packed,7 systems mixed (full),1.69875
+20000,gaia-ecs,systems_frag,frag 7sys mixed (alive),0.773156
+20000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.00317
+20000,pico_ecs,each_packed,"each<Pos,Vel>",0.72833
+20000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.08086
+20000,pico_ecs,query_filter,query<4> without<1>,1.24048
+20000,pico_ecs,destroy_entity,destroyEntity,6.17999
+20000,pico_ecs,get_component,get<Pos>,0.70209
+20000,pico_ecs,systems_packed,7 systems mixed (full),2.35166
+20000,pico_ecs,systems_frag,frag 7sys mixed (alive),2.64631
+100000,PulseECS,add_components,add components (Pos+Vel+50%Tag),5.8621
+100000,PulseECS,each_packed,"each<Pos,Vel>",0.622582
+100000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.05884
+100000,PulseECS,query_filter,query<4> without<1>,2.75133
+100000,PulseECS,destroy_entity,destroyEntity,13.24
+100000,PulseECS,get_component,get<Pos>,1.08267
+100000,PulseECS,systems_packed,7 systems mixed (full),1.70608
+100000,PulseECS,systems_frag,frag 7sys mixed (alive),2.12287
+100000,EnTT,add_components,add components (Pos+Vel+50%Tag),8.5024
+100000,EnTT,each_packed,"each<Pos,Vel>",1.12075
+100000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.24834
+100000,EnTT,query_filter,query<4> without<1>,4.14095
+100000,EnTT,destroy_entity,destroyEntity,29.8563
+100000,EnTT,get_component,get<Pos>,3.67558
+100000,EnTT,systems_packed,7 systems mixed (full),3.96183
+100000,EnTT,systems_frag,frag 7sys mixed (alive),3.96685
+100000,flecs,add_components,add components (Pos+Vel+50%Tag),72.7131
+100000,flecs,each_packed,"each<Pos,Vel>",0.216666
+100000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.274832
+100000,flecs,query_filter,query<4> without<1>,0.166665
+100000,flecs,destroy_entity,destroyEntity,55.9002
+100000,flecs,get_component,get<Pos>,10.6176
+100000,flecs,systems_packed,7 systems mixed (full),0.608418
+100000,flecs,systems_frag,frag 7sys mixed (alive),0.526576
+100000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.34
+100000,EntityX,each_packed,"each<Pos,Vel>",3.96925
+100000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.535
+100000,EntityX,query_filter,query<4> without<1>,9.72971
+100000,EntityX,destroy_entity,destroyEntity,15.7867
+100000,EntityX,get_component,get<Pos>,2.57667
+100000,EntityX,systems_packed,7 systems mixed (full),11.4632
+100000,EntityX,systems_frag,frag 7sys mixed (alive),13.898
+100000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),43.8974
+100000,gaia-ecs,each_packed,"each<Pos,Vel>",0.318
+100000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.508672
+100000,gaia-ecs,query_filter,query<4> without<1>,0.332763
+100000,gaia-ecs,destroy_entity,destroyEntity,68.2616
+100000,gaia-ecs,get_component,get<Pos>,9.29692
+100000,gaia-ecs,systems_packed,7 systems mixed (full),0.723084
+100000,gaia-ecs,systems_frag,frag 7sys mixed (alive),0.610558
+100000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),4.6913
+100000,pico_ecs,each_packed,"each<Pos,Vel>",0.708916
+100000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.25183
+100000,pico_ecs,query_filter,query<4> without<1>,1.36038
+100000,pico_ecs,destroy_entity,destroyEntity,6.64383
+100000,pico_ecs,get_component,get<Pos>,0.952334
+100000,pico_ecs,systems_packed,7 systems mixed (full),2.1565
+100000,pico_ecs,systems_frag,frag 7sys mixed (alive),2.86046
+200000,PulseECS,add_components,add components (Pos+Vel+50%Tag),6.0519
+200000,PulseECS,each_packed,"each<Pos,Vel>",0.605166
+200000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.02908
+200000,PulseECS,query_filter,query<4> without<1>,2.65919
+200000,PulseECS,destroy_entity,destroyEntity,13.0326
+200000,PulseECS,get_component,get<Pos>,1.18213
+200000,PulseECS,systems_packed,7 systems mixed (full),1.68458
+200000,PulseECS,systems_frag,frag 7sys mixed (alive),2.1281
+200000,EnTT,add_components,add components (Pos+Vel+50%Tag),9.45962
+200000,EnTT,each_packed,"each<Pos,Vel>",0.998624
+200000,EnTT,each_sparse,"each<Pos,Vel,Tag>",2.71367
+200000,EnTT,query_filter,query<4> without<1>,4.09533
+200000,EnTT,destroy_entity,destroyEntity,34.2114
+200000,EnTT,get_component,get<Pos>,3.9105
+200000,EnTT,systems_packed,7 systems mixed (full),4.04204
+200000,EnTT,systems_frag,frag 7sys mixed (alive),4.83685
+200000,flecs,add_components,add components (Pos+Vel+50%Tag),74.0114
+200000,flecs,each_packed,"each<Pos,Vel>",0.221833
+200000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.284086
+200000,flecs,query_filter,query<4> without<1>,0.162765
+200000,flecs,destroy_entity,destroyEntity,34.4058
+200000,flecs,get_component,get<Pos>,12.5173
+200000,flecs,systems_packed,7 systems mixed (full),0.602583
+200000,flecs,systems_frag,frag 7sys mixed (alive),0.499027
+200000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.6491
+200000,EntityX,each_packed,"each<Pos,Vel>",3.91871
+200000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.71367
+200000,EntityX,query_filter,query<4> without<1>,9.40848
+200000,EntityX,destroy_entity,destroyEntity,17.1739
+200000,EntityX,get_component,get<Pos>,2.52417
+200000,EntityX,systems_packed,7 systems mixed (full),11.7835
+200000,EntityX,systems_frag,frag 7sys mixed (alive),14.2801
+200000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),50.1422
+200000,gaia-ecs,each_packed,"each<Pos,Vel>",0.338166
+200000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.448002
+200000,gaia-ecs,query_filter,query<4> without<1>,0.361906
+200000,gaia-ecs,destroy_entity,destroyEntity,77.0123
+200000,gaia-ecs,get_component,get<Pos>,10.095
+200000,gaia-ecs,systems_packed,7 systems mixed (full),0.75621
+200000,gaia-ecs,systems_frag,frag 7sys mixed (alive),0.809212
+200000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),4.87315
+200000,pico_ecs,each_packed,"each<Pos,Vel>",0.783958
+200000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.16492
+200000,pico_ecs,query_filter,query<4> without<1>,1.27886
+200000,pico_ecs,destroy_entity,destroyEntity,6.97634
+200000,pico_ecs,get_component,get<Pos>,0.811416
+200000,pico_ecs,systems_packed,7 systems mixed (full),2.20121
+200000,pico_ecs,systems_frag,frag 7sys mixed (alive),3.09607
+500000,PulseECS,add_components,add components (Pos+Vel+50%Tag),6.12648
+500000,PulseECS,each_packed,"each<Pos,Vel>",0.618117
+500000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.12207
+500000,PulseECS,query_filter,query<4> without<1>,2.76564
+500000,PulseECS,destroy_entity,destroyEntity,20.025
+500000,PulseECS,get_component,get<Pos>,1.23223
+500000,PulseECS,systems_packed,7 systems mixed (full),1.83203
+500000,PulseECS,systems_frag,frag 7sys mixed (alive),2.92376
+500000,EnTT,add_components,add components (Pos+Vel+50%Tag),9.67946
+500000,EnTT,each_packed,"each<Pos,Vel>",1.17462
+500000,EnTT,each_sparse,"each<Pos,Vel,Tag>",2.9633
+500000,EnTT,query_filter,query<4> without<1>,4.33861
+500000,EnTT,destroy_entity,destroyEntity,62.7524
+500000,EnTT,get_component,get<Pos>,5.0648
+500000,EnTT,systems_packed,7 systems mixed (full),4.71618
+500000,EnTT,systems_frag,frag 7sys mixed (alive),5.871
+500000,flecs,add_components,add components (Pos+Vel+50%Tag),74.1611
+500000,flecs,each_packed,"each<Pos,Vel>",0.257933
+500000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.271333
+500000,flecs,query_filter,query<4> without<1>,0.176171
+500000,flecs,destroy_entity,destroyEntity,72.1568
+500000,flecs,get_component,get<Pos>,21.8254
+500000,flecs,systems_packed,7 systems mixed (full),0.52685
+500000,flecs,systems_frag,frag 7sys mixed (alive),0.488722
+500000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.2763
+500000,EntityX,each_packed,"each<Pos,Vel>",3.8071
+500000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.71847
+500000,EntityX,query_filter,query<4> without<1>,9.52032
+500000,EntityX,destroy_entity,destroyEntity,18.0797
+500000,EntityX,get_component,get<Pos>,2.86907
+500000,EntityX,systems_packed,7 systems mixed (full),11.5385
+500000,EntityX,systems_frag,frag 7sys mixed (alive),14.6403
+500000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),42.4028
+500000,gaia-ecs,each_packed,"each<Pos,Vel>",0.401883
+500000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.468234
+500000,gaia-ecs,query_filter,query<4> without<1>,0.389486
+500000,gaia-ecs,destroy_entity,destroyEntity,132.892
+500000,gaia-ecs,get_component,get<Pos>,10.7399
+500000,gaia-ecs,systems_packed,7 systems mixed (full),0.878884
+500000,gaia-ecs,systems_frag,frag 7sys mixed (alive),1.12767
+500000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),4.78821
+500000,pico_ecs,each_packed,"each<Pos,Vel>",0.726417
+500000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.20263
+500000,pico_ecs,query_filter,query<4> without<1>,1.39783
+500000,pico_ecs,destroy_entity,destroyEntity,7.54332
+500000,pico_ecs,get_component,get<Pos>,0.987017
+500000,pico_ecs,systems_packed,7 systems mixed (full),2.25878
+500000,pico_ecs,systems_frag,frag 7sys mixed (alive),5.26748
+1000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),6.01484
+1000000,PulseECS,each_packed,"each<Pos,Vel>",0.613472
+1000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.12817
+1000000,PulseECS,query_filter,query<4> without<1>,2.65029
+1000000,PulseECS,destroy_entity,destroyEntity,33.1169
+1000000,PulseECS,get_component,get<Pos>,2.48006
+1000000,PulseECS,systems_packed,7 systems mixed (full),1.77865
+1000000,PulseECS,systems_frag,frag 7sys mixed (alive),3.94168
+1000000,EnTT,add_components,add components (Pos+Vel+50%Tag),9.7156
+1000000,EnTT,each_packed,"each<Pos,Vel>",1.24518
+1000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.07656
+1000000,EnTT,query_filter,query<4> without<1>,4.40917
+1000000,EnTT,destroy_entity,destroyEntity,104.313
+1000000,EnTT,get_component,get<Pos>,10.1134
+1000000,EnTT,systems_packed,7 systems mixed (full),5.6236
+1000000,EnTT,systems_frag,frag 7sys mixed (alive),9.34813
+1000000,flecs,add_components,add components (Pos+Vel+50%Tag),72.0836
+1000000,flecs,each_packed,"each<Pos,Vel>",0.215958
+1000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.256222
+1000000,flecs,query_filter,query<4> without<1>,0.167857
+1000000,flecs,destroy_entity,destroyEntity,103.522
+1000000,flecs,get_component,get<Pos>,45.4281
+1000000,flecs,systems_packed,7 systems mixed (full),0.557625
+1000000,flecs,systems_frag,frag 7sys mixed (alive),0.457207
+1000000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.8963
+1000000,EntityX,each_packed,"each<Pos,Vel>",3.85718
+1000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.68006
+1000000,EntityX,query_filter,query<4> without<1>,9.40971
+1000000,EntityX,destroy_entity,destroyEntity,32.7874
+1000000,EntityX,get_component,get<Pos>,6.65846
+1000000,EntityX,systems_packed,7 systems mixed (full),11.5704
+1000000,EntityX,systems_frag,frag 7sys mixed (alive),14.7574
+1000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),43.9276
+1000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.657389
+1000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",0.982389
+1000000,gaia-ecs,query_filter,query<4> without<1>,0.807905
+1000000,gaia-ecs,destroy_entity,destroyEntity,166.595
+1000000,gaia-ecs,get_component,get<Pos>,14.2275
+1000000,gaia-ecs,systems_packed,7 systems mixed (full),1.84532
+1000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),1.86526
+1000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),4.96401
+1000000,pico_ecs,each_packed,"each<Pos,Vel>",0.76725
+1000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.25606
+1000000,pico_ecs,query_filter,query<4> without<1>,1.34687
+1000000,pico_ecs,destroy_entity,destroyEntity,9.0671
+1000000,pico_ecs,get_component,get<Pos>,1.38335
+1000000,pico_ecs,systems_packed,7 systems mixed (full),2.34253
+1000000,pico_ecs,systems_frag,frag 7sys mixed (alive),7.62406
+2000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),6.75369
+2000000,PulseECS,each_packed,"each<Pos,Vel>",0.571423
+2000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.15375
+2000000,PulseECS,query_filter,query<4> without<1>,2.87943
+2000000,PulseECS,destroy_entity,destroyEntity,52.5022
+2000000,PulseECS,get_component,get<Pos>,4.63775
+2000000,PulseECS,systems_packed,7 systems mixed (full),1.84585
+2000000,PulseECS,systems_frag,frag 7sys mixed (alive),5.96909
+2000000,EnTT,add_components,add components (Pos+Vel+50%Tag),9.65611
+2000000,EnTT,each_packed,"each<Pos,Vel>",1.3478
+2000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",3.3906
+2000000,EnTT,query_filter,query<4> without<1>,7.83183
+2000000,EnTT,destroy_entity,destroyEntity,128.933
+2000000,EnTT,get_component,get<Pos>,29.1074
+2000000,EnTT,systems_packed,7 systems mixed (full),5.44279
+2000000,EnTT,systems_frag,frag 7sys mixed (alive),13.5921
+2000000,flecs,add_components,add components (Pos+Vel+50%Tag),74.0047
+2000000,flecs,each_packed,"each<Pos,Vel>",0.271875
+2000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.261611
+2000000,flecs,query_filter,query<4> without<1>,0.179024
+2000000,flecs,destroy_entity,destroyEntity,136.249
+2000000,flecs,get_component,get<Pos>,62.3557
+2000000,flecs,systems_packed,7 systems mixed (full),0.611757
+2000000,flecs,systems_frag,frag 7sys mixed (alive),0.460525
+2000000,EntityX,add_components,add components (Pos+Vel+50%Tag),11.9525
+2000000,EntityX,each_packed,"each<Pos,Vel>",3.83975
+2000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.78281
+2000000,EntityX,query_filter,query<4> without<1>,9.44552
+2000000,EntityX,destroy_entity,destroyEntity,47.0109
+2000000,EntityX,get_component,get<Pos>,14.5026
+2000000,EntityX,systems_packed,7 systems mixed (full),11.3165
+2000000,EntityX,systems_frag,frag 7sys mixed (alive),14.5344
+2000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),45.4147
+2000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.668479
+2000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.06043
+2000000,gaia-ecs,query_filter,query<4> without<1>,0.866619
+2000000,gaia-ecs,destroy_entity,destroyEntity,199.488
+2000000,gaia-ecs,get_component,get<Pos>,21.9743
+2000000,gaia-ecs,systems_packed,7 systems mixed (full),2.47894
+2000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),2.25127
+2000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.09194
+2000000,pico_ecs,each_packed,"each<Pos,Vel>",0.764437
+2000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.32099
+2000000,pico_ecs,query_filter,query<4> without<1>,1.40562
+2000000,pico_ecs,destroy_entity,destroyEntity,12.8462
+2000000,pico_ecs,get_component,get<Pos>,1.88059
+2000000,pico_ecs,systems_packed,7 systems mixed (full),2.39706
+2000000,pico_ecs,systems_frag,frag 7sys mixed (alive),11.4486
+10000000,PulseECS,add_components,add components (Pos+Vel+50%Tag),8.87222
+10000000,PulseECS,each_packed,"each<Pos,Vel>",1.46181
+10000000,PulseECS,each_sparse,"each<Pos,Vel,Tag>",1.22817
+10000000,PulseECS,query_filter,query<4> without<1>,3.15879
+10000000,PulseECS,destroy_entity,destroyEntity,65.9907
+10000000,PulseECS,get_component,get<Pos>,7.15211
+10000000,PulseECS,systems_packed,7 systems mixed (full),2.06798
+10000000,PulseECS,systems_frag,frag 7sys mixed (alive),10.4845
+10000000,EnTT,add_components,add components (Pos+Vel+50%Tag),10.9109
+10000000,EnTT,each_packed,"each<Pos,Vel>",1.65126
+10000000,EnTT,each_sparse,"each<Pos,Vel,Tag>",4.35609
+10000000,EnTT,query_filter,query<4> without<1>,5.54111
+10000000,EnTT,destroy_entity,destroyEntity,157.577
+10000000,EnTT,get_component,get<Pos>,40.8732
+10000000,EnTT,systems_packed,7 systems mixed (full),6.38945
+10000000,EnTT,systems_frag,frag 7sys mixed (alive),22.9306
+10000000,flecs,add_components,add components (Pos+Vel+50%Tag),74.9223
+10000000,flecs,each_packed,"each<Pos,Vel>",0.513408
+10000000,flecs,each_sparse,"each<Pos,Vel,Tag>",0.2598
+10000000,flecs,query_filter,query<4> without<1>,0.176991
+10000000,flecs,destroy_entity,destroyEntity,169.138
+10000000,flecs,get_component,get<Pos>,79.5026
+10000000,flecs,systems_packed,7 systems mixed (full),0.643767
+10000000,flecs,systems_frag,frag 7sys mixed (alive),0.474667
+10000000,EntityX,add_components,add components (Pos+Vel+50%Tag),12.3289
+10000000,EntityX,each_packed,"each<Pos,Vel>",3.96158
+10000000,EntityX,each_sparse,"each<Pos,Vel,Tag>",5.78135
+10000000,EntityX,query_filter,query<4> without<1>,9.5697
+10000000,EntityX,destroy_entity,destroyEntity,68.2403
+10000000,EntityX,get_component,get<Pos>,19.3599
+10000000,EntityX,systems_packed,7 systems mixed (full),11.7226
+10000000,EntityX,systems_frag,frag 7sys mixed (alive),14.8194
+10000000,gaia-ecs,add_components,add components (Pos+Vel+50%Tag),47.1079
+10000000,gaia-ecs,each_packed,"each<Pos,Vel>",0.725267
+10000000,gaia-ecs,each_sparse,"each<Pos,Vel,Tag>",1.25448
+10000000,gaia-ecs,query_filter,query<4> without<1>,0.866209
+10000000,gaia-ecs,destroy_entity,destroyEntity,313.619
+10000000,gaia-ecs,get_component,get<Pos>,33.3033
+10000000,gaia-ecs,systems_packed,7 systems mixed (full),2.88029
+10000000,gaia-ecs,systems_frag,frag 7sys mixed (alive),2.80173
+10000000,pico_ecs,add_components,add components (Pos+Vel+50%Tag),5.84748
+10000000,pico_ecs,each_packed,"each<Pos,Vel>",0.823108
+10000000,pico_ecs,each_sparse,"each<Pos,Vel,Tag>",1.26097
+10000000,pico_ecs,query_filter,query<4> without<1>,2.55445
+10000000,pico_ecs,destroy_entity,destroyEntity,29.3597
+10000000,pico_ecs,get_component,get<Pos>,5.33875
+10000000,pico_ecs,systems_packed,7 systems mixed (full),2.62476
+10000000,pico_ecs,systems_frag,frag 7sys mixed (alive),18.804

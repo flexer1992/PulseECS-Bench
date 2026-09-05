@@ -19,6 +19,7 @@ namespace engine
         virtual size_t size() const = 0;
         virtual void clear() = 0;
         virtual bool empty() const = 0;
+        virtual void sort() = 0;
     };
 
     template <typename T>
@@ -75,7 +76,8 @@ namespace engine
 
             if (owner >= sparse_.size())
             {
-                sparse_.resize(owner + 1, INVALID_INDEX);
+                const size_t newCap = std::max(static_cast<size_t>(owner + 1), sparse_.size() * 2);
+                sparse_.resize(newCap, INVALID_INDEX);
             }
 
             size_t index = dense_.size();
@@ -183,6 +185,37 @@ namespace engine
         bool empty() const override
         {
             return dense_.empty();
+        }
+
+        /// @brief Дефрагментация: сортирует dense_ по возрастанию owner
+        /// и восстанавливает индексы в sparse_ для идеальной кэш-локальности.
+        void sort() override
+        {
+            if (dense_.size() <= 1)
+                return;
+
+            std::sort(dense_.begin(), dense_.end(), [](const Slot &a, const Slot &b) {
+                return a.owner < b.owner;
+            });
+
+            for (size_t i = 0; i < dense_.size(); ++i)
+            {
+                sparse_[dense_[i].owner] = static_cast<uint32_t>(i);
+            }
+        }
+
+        template <typename Compare>
+        void sort(Compare &&comp)
+        {
+            if (dense_.size() <= 1)
+                return;
+
+            std::sort(dense_.begin(), dense_.end(), std::forward<Compare>(comp));
+
+            for (size_t i = 0; i < dense_.size(); ++i)
+            {
+                sparse_[dense_[i].owner] = static_cast<uint32_t>(i);
+            }
         }
 
         static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
