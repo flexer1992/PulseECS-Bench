@@ -9,6 +9,7 @@
 #include <array>
 #include <bit>
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 #include <memory>
@@ -620,6 +621,230 @@ namespace engine
         QueryN<Ts...> query()
         {
             return QueryN<Ts...>{this};
+        }
+
+        // ==================== view — range-for запрос ====================
+        //
+        //     for (auto [id, pos, vel] : world.view<Pos, Vel>()) { ... }
+        //     for (auto [pos, vel]      : world.view<Pos, Vel>().comps()) { ... }
+        //     for (auto [id, a, b]      : world.view<A, B>().exclude<Extra>()) { ... }
+        //
+        // Схема та же, что у each<>: ведущий — наименьший пул, идём по его dense.
+        // Отличие: все компоненты, включая ведущий, добираются get(id). Это цена
+        // типобезопасного итератора без рантайм-диспатча на каждом шаге (тип
+        // ведущего выбирается в рантайме, а кортеж должен быть статическим).
+        // Для горячих систем each<>(callback) остаётся самым быстрым путём:
+        // там ведущий компонент читается прямо из dense-слота.
+        //
+        // Владение: view хранит неконтролирующие указатели на пулы. Пока идёт
+        // итерация, нельзя добавлять/удалять компоненты и сущности.
+        template <bool kWithEntity, typename... Ts>
+        class BasicView
+        {
+            template <bool, typename...>
+            friend class BasicView;
+            friend class World; // World::view() собирает view через приватную часть
+
+        public:
+            class iterator
+            {
+                friend class BasicView;
+
+                const BasicView *view_ = nullptr;
+                std::size_t i_ = 0;
+                EntityId id_ = InvalidEntity;
+                std::tuple<Ts *...> comps_;
+
+                iterator(const BasicView *view, std::size_t start)
+                    : view_(view), i_(start)
+                {
+                    resolve();
+                }
+
+                /// @brief Продвигает i_ к следующей сущности, у которой есть ВСЕ
+                /// компоненты Ts (и ни один из exclude-типов), и кэширует указатели.
+                void resolve()
+                {
+                    const BasicView &v = *view_;
+                    const std::size_t n = v.drvCount_;
+
+                    if constexpr (sizeof...(Ts) == 1)
+                    {
+                        // Единственный пул — он же ведущий (тип известен во время
+                        // компиляции): компонент есть у каждой записи dense, читаем
+                        // прямо из слота, без поиска по sparse.
+                        auto *set = std::get<0>(v.pools_);
+                        while (i_ < n)
+                        {
+                            auto &slot = set->rawSlot(i_);
+
+                            if (!v.skipBits_.empty() &&
+                                (v.skipBits_[slot.owner >> 6] &
+                                 (std::uint64_t(1) << (slot.owner & 63))))
+                            {
+                                ++i_;
+                                continue;
+                            }
+
+                            id_ = slot.owner;
+                            std::get<0>(comps_) = &slot.data;
+                            return;
+                        }
+                        return;
+                    }
+
+                    while (i_ < n)
+                    {
+                        std::memcpy(&id_, v.drvBase_ + i_ * v.drvStride_, sizeof(EntityId));
+
+                        if (!v.skipBits_.empty() &&
+                            (v.skipBits_[id_ >> 6] & (std::uint64_t(1) << (id_ & 63))))
+                        {
+                            ++i_;
+                            continue;
+                        }
+
+                        auto ptrs = std::apply(
+                            [&](auto *...p)
+                            { return std::tuple{p->get(id_)...}; }, v.pools_);
+                        const bool present =
+                            std::apply([](auto *...p)
+                                       { return ((p != nullptr) && ...); }, ptrs);
+                        if (present)
+                        {
+                            comps_ = std::move(ptrs);
+                            return;
+                        }
+                        ++i_;
+                    }
+                }
+
+            public:
+                iterator() = default;
+
+                decltype(auto) operator*() const
+                {
+                    if constexpr (kWithEntity)
+                        return std::apply(
+                            [&](auto *...p)
+                            { return std::tuple<EntityId, Ts &...>(id_, *p...); }, comps_);
+                    else
+                        return std::apply(
+                            [](auto *...p)
+                            { return std::tuple<Ts &...>(*p...); }, comps_);
+                }
+
+                iterator &operator++()
+                {
+                    ++i_;
+                    resolve();
+                    return *this;
+                }
+
+                iterator operator++(int)
+                {
+                    iterator tmp = *this;
+                    ++(*this);
+                    return tmp;
+                }
+
+                bool operator==(const iterator &other) const { return i_ == other.i_; }
+                bool operator!=(const iterator &other) const { return i_ != other.i_; }
+            };
+
+            iterator begin() const { return iterator(this, 0); }
+            iterator end() const { return iterator(this, drvCount_); }
+
+            /// @brief Исключить сущности, имеющие ХОТЯ БЫ ОДИН из компонентов Es...
+            template <typename... Es>
+            BasicView exclude() &&
+            {
+                static_assert(sizeof...(Es) >= 1, "exclude<> требует хотя бы один тип компонента");
+                (accumulateExclude<Es>(), ...);
+                return std::move(*this);
+            }
+
+            /// @brief Тот же запрос без EntityId: for (auto [pos, vel] : world.view<Pos, Vel>().comps())
+            BasicView<false, Ts...> comps() const requires (kWithEntity)
+            {
+                BasicView<false, Ts...> v;
+                v.world_ = world_;
+                v.pools_ = pools_;
+                v.drvBase_ = drvBase_;
+                v.drvStride_ = drvStride_;
+                v.drvCount_ = drvCount_;
+                v.skipBits_ = skipBits_;
+                return v;
+            }
+
+        private:
+            BasicView() = default;
+            explicit BasicView(World *world) : world_(world) {}
+
+            /// @brief Выбор ведущего (наименьшего) пула и параметров обхода его dense.
+            void init(std::tuple<SparseSet<Ts> *...> pools)
+            {
+                pools_ = std::move(pools);
+
+                const std::array<std::size_t, sizeof...(Ts)> sizes = std::apply(
+                    [](auto *...p)
+                    { return std::array<std::size_t, sizeof...(Ts)>{p->size()...}; },
+                    pools_);
+
+                std::size_t driver = 0;
+                for (std::size_t i = 1; i < sizes.size(); ++i)
+                {
+                    if (sizes[i] < sizes[driver])
+                        driver = i;
+                }
+
+                // owner — первый член Slot с нулевым смещением у ЛЮБОГО T, поэтому
+                // dense ведущего пула можно обходить как массив байтов с шагом
+                // sizeof(Slot), не зная тип ведущего на каждом шаге итерации.
+                World::dispatchIndex<sizeof...(Ts)>(driver, [&](auto idx)
+                {
+                    auto *drv = std::get<decltype(idx)::value>(pools_);
+                    using DrvSet = std::remove_pointer_t<decltype(drv)>;
+                    drvBase_ = reinterpret_cast<const char *>(drv->data());
+                    drvStride_ = sizeof(typename DrvSet::Slot);
+                });
+                drvCount_ = sizes[driver];
+            }
+
+            template <typename E>
+            void accumulateExclude()
+            {
+                // findContainer, а не getContainer: тип ни разу не регистрировался —
+                // исключать нечего, и пул создавать не нужно.
+                auto *c = world_->template findContainer<E>();
+                if (!c)
+                    return;
+
+                if (skipBits_.empty())
+                    skipBits_.assign((world_->entitySlotCount() + 63) / 64, 0);
+
+                for (const auto &slot : *c)
+                    skipBits_[slot.owner >> 6] |= (std::uint64_t(1) << (slot.owner & 63));
+            }
+
+            World *world_ = nullptr;
+            std::tuple<SparseSet<Ts> *...> pools_;
+            const char *drvBase_ = nullptr;
+            std::size_t drvStride_ = 0;
+            std::size_t drvCount_ = 0;
+            std::vector<std::uint64_t> skipBits_;
+        };
+
+        /// @brief Итерируемый запрос: for (auto [id, pos, vel] : world.view<Pos, Vel>()) { ... }
+        /// @note Для горячих систем each<>(callback) быстрее: ведущий компонент
+        /// берётся напрямую из dense-слота, без поиска по sparse.
+        template <typename... Ts>
+        BasicView<true, Ts...> view()
+        {
+            static_assert(sizeof...(Ts) >= 1, "view<> требует хотя бы один тип компонента");
+            BasicView<true, Ts...> v{this};
+            v.init(std::tuple<SparseSet<Ts> *...>{&getContainer<Ts>()...});
+            return v;
         }
 
         // ==================== each_if — pred и fn с теми же сигнатурами, что у each ====================

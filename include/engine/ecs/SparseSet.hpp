@@ -148,6 +148,9 @@ namespace engine
         const_iterator begin() const { return dense_.begin(); }
         const_iterator end() const { return dense_.end(); }
 
+        Slot *data() { return dense_.data(); }
+        const Slot *data() const { return dense_.data(); }
+
         // ==================== ISparseSet interface ====================
 
         void remove(EntityId owner) override
