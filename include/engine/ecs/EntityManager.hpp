@@ -192,4 +192,7 @@ namespace engine
         size_t aliveCount_{0};
     };
 
+    /// @brief Публичный псевдоним для API World (handleOf / isAlive(handle) / ...).
+    using EntityHandle = EntityManager::EntityHandle;
+
 } // namespace engine

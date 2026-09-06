@@ -118,6 +118,33 @@ namespace engine
             return dense_[index].owner;
         }
 
+        /// @brief Индекс сущности в dense-массиве. Владелец обязан вызвать contains().
+        size_t indexOf(EntityId owner) const
+        {
+            assert(contains(owner));
+            return sparse_[owner];
+        }
+
+        /// @brief Синхронный swap для owning-групп: сущность owner переезжает на
+        /// позицию pos, прежний обитатель pos — на её место. Поддерживает
+        /// инвариант sparse<->dense.
+        void swapAt(EntityId owner, size_t pos)
+        {
+            assert(contains(owner));
+            assert(pos < dense_.size());
+
+            const size_t src = sparse_[owner];
+            if (src == pos)
+                return;
+
+            Slot tmp = std::move(dense_[pos]);
+            dense_[pos] = std::move(dense_[src]);
+            dense_[src] = std::move(tmp);
+
+            sparse_[dense_[src].owner] = static_cast<uint32_t>(src);
+            sparse_[owner] = static_cast<uint32_t>(pos);
+        }
+
         T &rawData(size_t index)
         {
             assert(index < dense_.size());

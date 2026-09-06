@@ -11,13 +11,14 @@
 #include <cstdint>
 #include <cstring>
 #include <string>
+#include <string_view>
 #include <vector>
 #include <memory>
 #include <unordered_map>
 #include <tuple>
 #include <typeindex>
+#include <typeinfo>
 #include <utility>
-#include <cctype>
 #include <type_traits>
 
 namespace engine
@@ -32,46 +33,47 @@ namespace engine
         size_t memoryBytes;
     };
 
-    // Хелпер для получения читаемого имени типа из mangled имени
+    // Хелпер для получения читаемого имени типа. Вырезает имя из сигнатуры
+    // шаблонной функции, поэтому работает без RTTI (-fno-rtti не ломается) и
+    // одинаково на Clang/GCC (__PRETTY_FUNCTION__) и MSVC (__FUNCSIG__).
     template <typename T>
-    inline std::string getTypeName()
+    constexpr const char *typeNameRaw() noexcept
     {
-        std::string name = typeid(T).name();
-        std::string result;
-        size_t i = 0;
-        while (i < name.size())
-        {
-            if (std::isdigit(name[i]))
-            {
-                size_t numLen = 0;
-                while (i + numLen < name.size() && std::isdigit(name[i + numLen]))
-                    numLen++;
-                std::string numStr = name.substr(i, numLen);
-                size_t num = std::stoul(numStr);
-                i += numLen;
+#if defined(_MSC_VER) && !defined(__clang__)
+        return __FUNCSIG__;
+#else
+        return __PRETTY_FUNCTION__;
+#endif
+    }
 
-                if (i + num <= name.size() && num > 0)
-                {
-                    if (!result.empty())
-                        result += "::";
-                    result += name.substr(i, num);
-                    i += num;
-                }
-            }
-            else if (name[i] == 'E')
+    template <typename T>
+    constexpr std::string_view getTypeName()
+    {
+        const std::string_view s = typeNameRaw<T>();
+
+#if defined(_MSC_VER) && !defined(__clang__)
+        std::string_view name = s.substr(s.find('<') + 1, s.rfind('>') - s.find('<') - 1);
+        // MSVC украшает имена: 'struct Pos', 'class Foo', ...
+        for (const std::string_view kw : {"struct ", "class ", "union ", "enum "})
+        {
+            if (name.starts_with(kw))
             {
+                name.remove_prefix(kw.size());
                 break;
             }
-            else if (name[i] == 'N')
-            {
-                i++;
-            }
-            else
-            {
-                i++;
-            }
         }
-        return result.empty() ? name : result;
+        return name;
+#elif defined(__clang__) || defined(__GNUC__)
+        // "... [with T = engine::Pos]" либо "... [with T = engine::Pos; ...]"
+        const auto b = s.find("T = ") + 4;
+        auto e = s.find(';', b);
+        const auto close = s.find(']', b);
+        if (e == std::string_view::npos || (close != std::string_view::npos && close < e))
+            e = close;
+        return s.substr(b, e - b);
+#else
+        return typeid(T).name(); // редкий компилятор: старое поведение, требует RTTI
+#endif
     }
 
     // ==================== Класс мира ====================
@@ -90,10 +92,199 @@ namespace engine
         inline const std::size_t componentTypeId = g_nextComponentId++;
     }
 
+    // ==================== Owning-группы ====================
+    //
+    // Группа держит сущности со ВСЕМИ компонентами Ts плотно в НАЧАЛЕ
+    // dense-массива КАЖДОГО принадлежащего ей пула: позиции [0, len).
+    // Якорь в начале выбран не случайно: физическое удаление (swap-and-pop)
+    // всегда трогает ПОСЛЕДНИЙ слот массива и потому никогда не задевает
+    // регион группы — вся поддержка инварианта сводится к синхронным
+    // swap-цепочкам swapAt(pos, id) по всем пулам сразу.
+    //
+    // Итерация группы — прямой проход по [0, len) каждого пула: ноль поисков
+    // по sparse, ноль проверок присутствия. Это путь к архетипным скоростям
+    // (~0.2-0.5 ns/op) поверх sparse-set хранения.
+    //
+    // Ограничения (как в EnTT): два пула не могут принадлежать двум разным
+    // группам; sort()/defragment() owned-пулов запрещены (ломают инвариант).
+
+    class IGroup
+    {
+    public:
+        virtual ~IGroup() = default;
+        /// @brief Сущность получила компонент, принадлежащий группе (после create).
+        virtual void onComponentAdded(EntityId id) = 0;
+        /// @brief Сущность теряет компонент группы (вызывается ДО remove из пула).
+        virtual void onComponentRemoved(EntityId id) = 0;
+        virtual void reset() = 0;
+        virtual bool ownsSameTypes(const std::vector<std::size_t> &sortedTypeIds) const = 0;
+        virtual const std::size_t *lenPtr() const = 0;
+    };
+
+    namespace detail
+    {
+        /// @brief Хранитель инварианта группы: живёт в World, знает пулы и len.
+        template <typename... Ts>
+        class GroupHandler final : public IGroup
+        {
+        public:
+            using Pools = std::tuple<SparseSet<Ts> *...>;
+
+            GroupHandler(Pools pools, std::vector<std::size_t> sortedTypeIds)
+                : pools_(std::move(pools)), ownedTypeIds_(std::move(sortedTypeIds)) {}
+
+            /// @brief Первичная сортировка: члены группы — в начало всех пулов.
+            /// Проход по dense ведущего пула: кто не в регионе и имеет все
+            /// остальные компоненты — переезжает на позицию len синхронно везде.
+            void arrange()
+            {
+                auto *drv = std::get<0>(pools_);
+                const std::size_t n = drv->size();
+                for (std::size_t p = 0; p < n; ++p)
+                    tryPush(drv->getOwner(p));
+            }
+
+            void onComponentAdded(EntityId id) override { tryPush(id); }
+
+            void onComponentRemoved(EntityId id) override
+            {
+                auto *drv = std::get<0>(pools_);
+                if (drv->contains(id) && drv->indexOf(id) < len_)
+                    swapElements(--len_, id); // уводим id в конец региона, регион сжимается справа
+            }
+
+            void reset() override { len_ = 0; }
+
+            bool ownsSameTypes(const std::vector<std::size_t> &sortedTypeIds) const override
+            {
+                return sortedTypeIds == ownedTypeIds_;
+            }
+
+            const std::size_t *lenPtr() const override { return &len_; }
+
+        private:
+            void tryPush(EntityId id)
+            {
+                auto *drv = std::get<0>(pools_);
+                if (!drv->contains(id) || drv->indexOf(id) < len_)
+                    return; // нет компонента-драйвера либо уже член группы
+
+                // Остальные (кроме ведущего) пулы: наличие = членство.
+                const bool hasAll = std::apply(
+                    [id](auto *first, auto *...rest)
+                    {
+                        (void)first; // ведущий проверен выше
+                        return (rest->contains(id) && ...);
+                    }, pools_);
+                if (hasAll)
+                    swapElements(len_++, id);
+            }
+
+            void swapElements(std::size_t pos, EntityId id)
+            {
+                std::apply([pos, id](auto *...p)
+                           { (p->swapAt(id, pos), ...); }, pools_);
+            }
+
+            Pools pools_;
+            std::size_t len_ = 0;
+            std::vector<std::size_t> ownedTypeIds_;
+        };
+    } // namespace detail
+
+    /// @brief Дескриптор группы для пользователя: НЕ владеет handler'ом (им
+    /// владеет World), читает len через указатель — размер меняется на лету.
+    template <typename... Ts>
+    class BasicGroup
+    {
+    public:
+        using Pools = std::tuple<SparseSet<Ts> *...>;
+
+        BasicGroup() = default;
+        BasicGroup(Pools pools, const std::size_t *len)
+            : pools_(std::move(pools)), len_(len) {}
+
+        std::size_t size() const
+        {
+            assert(len_ && "Группа не привязана: создавайте через world.group<Ts...>()");
+            return *len_;
+        }
+
+        /// @brief Итерация [0, len): id и все компоненты — прямой доступ к dense.
+        /// @param func: (Ts&...) -> void либо (EntityId, Ts&...) -> void
+        template <typename F>
+        void each(F &&func) const
+        {
+            const std::size_t n = size();
+            for (std::size_t i = 0; i < n; ++i)
+            {
+                auto ptrs = std::apply([i](auto *...p)
+                                       { return std::tuple{&p->rawSlot(i).data...}; },
+                                       pools_);
+                const EntityId id = std::get<0>(pools_)->getOwner(i);
+                std::apply([&](auto *...p)
+                           {
+                    if constexpr (std::is_invocable_v<F, EntityId, Ts &...>)
+                        func(id, *p...);
+                    else
+                        func(*p...); },
+                           ptrs);
+            }
+        }
+
+        class iterator
+        {
+            const BasicGroup *g_ = nullptr;
+            std::size_t i_ = 0;
+
+        public:
+            iterator() = default;
+            iterator(const BasicGroup *g, std::size_t i) : g_(g), i_(i) {}
+
+            decltype(auto) operator*() const
+            {
+                const std::size_t i = i_;
+                auto ptrs = std::apply([i](auto *...p)
+                                       { return std::tuple{&p->rawSlot(i).data...}; },
+                                       g_->pools_);
+                const EntityId id = std::get<0>(g_->pools_)->getOwner(i);
+                return std::apply([&](auto *...p)
+                                  { return std::tuple<EntityId, Ts &...>(id, *p...); },
+                                  ptrs);
+            }
+
+            iterator &operator++()
+            {
+                ++i_;
+                return *this;
+            }
+
+            iterator operator++(int)
+            {
+                iterator tmp = *this;
+                ++i_;
+                return tmp;
+            }
+
+            bool operator==(const iterator &o) const { return i_ == o.i_; }
+            bool operator!=(const iterator &o) const { return i_ != o.i_; }
+        };
+
+        iterator begin() const { return iterator{this, 0}; }
+        iterator end() const { return iterator{this, size()}; }
+
+    private:
+        Pools pools_;
+        const std::size_t *len_ = nullptr;
+    };
+
+    // ==================== Класс мира ====================
+
     class World
     {
     private:
         EntityManager entities_;
+
         // Основной массив контейнеров
         std::vector<std::unique_ptr<ISparseSet>> containers_;
         // Removers: неконтролирующие указатели на те же пулы (владеет containers_).
@@ -101,6 +292,15 @@ namespace engine
         // компонента; виртуальный ISparseSet::remove даёт один dispatch без
         // аллокаций при регистрации типа.
         std::vector<ISparseSet *> removers_;
+
+        // Owning-группы: handler'ы (владеет World) и карта typeId -> группа.
+        // У пула не может быть двух групп: поддерживать два независимых
+        // региона [0, len) в одном dense-массиве невозможно.
+        // hasGroups_ дублирует !groups_.empty() для быстрого выхода из хуков
+        // add/remove: у большинства миров групп нет вовсе.
+        std::vector<std::unique_ptr<IGroup>> groups_;
+        std::vector<IGroup *> poolGroup_;
+        bool hasGroups_ = false;
 
         // Маска типов компонентов на сущность теперь живёт ВНУТРИ EntityManager
         // (EntityManager::Record::compMask): поколение и маска делят одну кэш-линию,
@@ -124,6 +324,33 @@ namespace engine
             }
             assert(id < entities_.slotCount() && "Entity slot must exist (entity must be alive)");
             entities_.compMaskRef(id) |= (std::uint64_t(1) << typeId);
+        }
+
+        /// @brief Уведомить owning-группу (если есть) о новом компоненте.
+        /// Быстрый выход по флагу: у большинства миров групп нет вовсе.
+        template <typename T>
+        void notifyGroupAdded(EntityId id)
+        {
+            if (!hasGroups_)
+                return;
+            const size_t typeId = getTypeId<T>();
+            if (typeId < poolGroup_.size() && poolGroup_[typeId])
+                poolGroup_[typeId]->onComponentAdded(id);
+        }
+
+        void notifyGroupRemoved(size_t typeId, EntityId id)
+        {
+            if (!hasGroups_)
+                return;
+            if (typeId < poolGroup_.size() && poolGroup_[typeId])
+                poolGroup_[typeId]->onComponentRemoved(id);
+        }
+
+        template <typename T>
+        bool isPoolOwned() const
+        {
+            const size_t typeId = getTypeId<T>();
+            return typeId < poolGroup_.size() && poolGroup_[typeId] != nullptr;
         }
         // Опционально: имена типов (для дебага / профилирования)
         std::vector<std::string> typeNames_;
@@ -194,17 +421,26 @@ namespace engine
                         const size_t bit = static_cast<size_t>(std::countr_zero(m));
                         m &= (m - 1); // сбросить младший установленный бит
                         if (bit < removers_.size() && removers_[bit])
+                        {
+                            // owning-группы узнают об удалении ДО физического remove
+                            if (hasGroups_) [[unlikely]]
+                                notifyGroupRemoved(bit, id);
                             removers_[bit]->remove(id);
+                        }
                     }
                 }
             }
             else
             {
                 // Типов больше kMaskBits — маска неполная, идём старым путём.
-                for (auto *remover : removers_)
+                for (size_t i = 0; i < removers_.size(); ++i)
                 {
-                    if (remover)
-                        remover->remove(id);
+                    if (removers_[i])
+                    {
+                        if (hasGroups_) [[unlikely]]
+                            notifyGroupRemoved(i, id);
+                        removers_[i]->remove(id);
+                    }
                 }
             }
 
@@ -214,6 +450,74 @@ namespace engine
         bool isAlive(EntityId id) const
         {
             return entities_.isAlive(id);
+        }
+
+        // ==================== Generational handles ====================
+        //
+        // Голый EntityId не отличает переиспользованный слот от старой
+        // сущности: после destroy + create старый id молча указывает на нового
+        // жильца. EntityHandle хранит поколение слота и делает use-after-recycle
+        // обнаружимым (assert в debug через assertValidHandle-семантику).
+
+        /// @brief Хендл существующей сущности (id + поколение слота).
+        EntityHandle handleOf(EntityId id) const { return entities_.createHandle(id); }
+
+        /// @brief Создать сущность и сразу получить её хендл.
+        EntityHandle createEntityHandle()
+        {
+            const EntityId id = entities_.create();
+            return entities_.createHandle(id);
+        }
+
+        /// @brief Жива ли сущность, на которую ссылается хендл, и не сменился
+        /// ли жилец слота с момента его создания.
+        bool isAlive(EntityHandle h) const { return entities_.validateHandle(h); }
+
+        template <typename T, typename... Args>
+        T &addComponent(EntityHandle h, Args &&...args)
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            return addComponent<T>(h.id, std::forward<Args>(args)...);
+        }
+
+        template <typename T>
+        T *getComponent(EntityHandle h)
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            return getComponent<T>(h.id);
+        }
+
+        template <typename T>
+        const T *getComponent(EntityHandle h) const
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            return getComponent<T>(h.id);
+        }
+
+        template <typename T>
+        bool hasComponent(EntityHandle h) const
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            return hasComponent<T>(h.id);
+        }
+
+        template <typename T>
+        void removeComponent(EntityHandle h)
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            removeComponent<T>(h.id);
+        }
+
+        void destroyEntity(EntityHandle h)
+        {
+            assert(entities_.validateHandle(h) &&
+                   "Stale entity handle: сущность удалена либо слот переиспользован");
+            destroyEntity(h.id);
         }
 
         size_t entityCount() const
@@ -290,7 +594,7 @@ namespace engine
                 // Время жизни указателя обеспечивает containers_ (unique_ptr).
                 removers_[id] = containers_[id].get();
 
-                typeNames_[id] = getTypeName<T>();
+                typeNames_[id].assign(getTypeName<T>());
             }
 
             return *static_cast<SparseSet<T> *>(containers_[id].get());
@@ -305,7 +609,10 @@ namespace engine
             assert(entities_.isAlive(id) && "Entity must be alive!");
             auto &container = getContainer<T>();
             markComponentBit(id, getTypeId<T>());
-            return container.create(id, std::forward<Args>(args)...);
+            T &comp = container.create(id, std::forward<Args>(args)...);
+            if (hasGroups_) [[unlikely]]
+                notifyGroupAdded<T>(id);
+            return comp;
         }
 
         template <typename T>
@@ -332,7 +639,10 @@ namespace engine
                 return *existing;
             }
             markComponentBit(id, getTypeId<T>());
-            return container.create(id, std::forward<Args>(args)...);
+            T &comp = container.create(id, std::forward<Args>(args)...);
+            if (hasGroups_) [[unlikely]]
+                notifyGroupAdded<T>(id);
+            return comp;
         }
 
         template <typename T>
@@ -356,6 +666,8 @@ namespace engine
             if (!container)
                 return;
 
+            if (hasGroups_) [[unlikely]]
+                notifyGroupRemoved(getTypeId<T>(), id); // ДО физического remove
             container->remove(id);
 
             const size_t typeId = getTypeId<T>();
@@ -373,26 +685,35 @@ namespace engine
         }
 
         /// @brief Дефрагментация пула конкретного компонента
+        /// @note Пулы, принадлежащие owning-группе, сортировать нельзя —
+        /// это ломает инвариант [0, len). Вызов пропускается (assert в debug).
         template <typename T>
         void sort()
         {
-            getContainer<T>().sort();
+            assert(!isPoolOwned<T>() &&
+                   "Cannot sort a pool owned by a group: group invariant [0, len) would break");
+            if (!isPoolOwned<T>())
+                getContainer<T>().sort();
         }
 
         /// @brief Дефрагментация пула с пользовательским компаратором
         template <typename T, typename Compare>
         void sort(Compare &&comp)
         {
-            getContainer<T>().sort(std::forward<Compare>(comp));
+            assert(!isPoolOwned<T>() &&
+                   "Cannot sort a pool owned by a group: group invariant [0, len) would break");
+            if (!isPoolOwned<T>())
+                getContainer<T>().sort(std::forward<Compare>(comp));
         }
 
         /// @brief Дефрагментирует ВСЕ зарегистрированные пулы компонентов
+        /// (принадлежащие owning-группам пропускаются)
         void defragment()
         {
-            for (auto &container : containers_)
+            for (size_t i = 0; i < containers_.size(); ++i)
             {
-                if (container)
-                    container->sort();
+                if (containers_[i] && !(i < poolGroup_.size() && poolGroup_[i]))
+                    containers_[i]->sort();
             }
         }
 
@@ -404,6 +725,8 @@ namespace engine
                     container->clear();
             }
             entities_.reset(); // records_ сбрасывает и поколения, и маски компонентов
+            for (auto &group : groups_)
+                group->reset(); // регионы групп опустели вместе с пулами
         }
 
         // ==================== each() - прямые методы итерации ====================
@@ -845,6 +1168,61 @@ namespace engine
             BasicView<true, Ts...> v{this};
             v.init(std::tuple<SparseSet<Ts> *...>{&getContainer<Ts>()...});
             return v;
+        }
+
+        // ==================== group — owning-группа ====================
+        //
+        //     auto g = world.group<Pos, Vel>();
+        //     for (auto [id, pos, vel] : g) { ... }   // ~0.2-0.5 ns/op
+        //     g.each([](EntityId id, Pos&, Vel&) { ... });
+        //
+        // Сущности со ВСЕМИ компонентами Ts держатся плотно в начале каждого
+        // пула [0, len); add/remove компонента поддерживают инвариант
+        // автоматически. Правила: один пул — только одна группа; sort()/
+        // defragment() owned-пулов запрещены (пропускаются). Дескриптор не
+        // владеет состоянием: размер группы читается на лету.
+
+        /// @brief Owning-группа по компонентам Ts. Повторный вызов с тем же
+        /// набором типов возвращает дескриптор существующей группы.
+        template <typename... Ts>
+        BasicGroup<Ts...> group()
+        {
+            static_assert(sizeof...(Ts) >= 1, "group<> требует хотя бы один тип компонента");
+
+            auto pools = std::tuple<SparseSet<Ts> *...>{&getContainer<Ts>()...};
+
+            std::vector<std::size_t> sig{detail::componentTypeId<Ts>...};
+            std::sort(sig.begin(), sig.end());
+
+            for (const auto &g : groups_)
+            {
+                if (g->ownsSameTypes(sig))
+                    return BasicGroup<Ts...>{std::move(pools), g->lenPtr()};
+            }
+
+            // Конфликт владения: у пула уже есть другая группа.
+            for (std::size_t tid : sig)
+            {
+                (void)tid;
+                assert(!(tid < poolGroup_.size() && poolGroup_[tid]) &&
+                       "Conflicting groups: пул уже принадлежит другой owning-группе");
+            }
+
+            auto handler = std::make_unique<detail::GroupHandler<Ts...>>(
+                pools, std::vector<std::size_t>(sig));
+            detail::GroupHandler<Ts...> *raw = handler.get();
+            groups_.push_back(std::move(handler));
+            hasGroups_ = true;
+
+            for (std::size_t tid : sig)
+            {
+                if (poolGroup_.size() <= tid)
+                    poolGroup_.resize(tid + 1, nullptr);
+                poolGroup_[tid] = raw;
+            }
+
+            raw->arrange();
+            return BasicGroup<Ts...>{std::move(pools), raw->lenPtr()};
         }
 
         // ==================== each_if — pred и fn с теми же сигнатурами, что у each ====================
