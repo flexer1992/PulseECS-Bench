@@ -459,5 +459,134 @@ sink += local;
     }
 
     std::cout << "\nsink=" << sink << "\n";
+
+    // ============================================================
+    // Owning group: frag<Pos,Vel> iteration (в sink НЕ входит)
+    //
+    // Зеркало сценария из ecs_bench_mine.cpp: тот же состав мира, тот же
+    // поток rng, та же метка строки. Группа создаётся ПОСЛЕ чёрна — EnTT
+    // сортирует owned-пулы при создании, дальше инвариант поддерживается
+    // сам. Размещено после печати sink, поэтому эквивалентность sink не
+    // затрагивает.
+    // ============================================================
+    {
+        Registry r;
+        std::mt19937 grng(static_cast<std::uint32_t>(args.seed));
+
+        std::vector<Entity> eids;
+        eids.reserve(args.entities);
+        for (std::size_t i = 0; i < args.entities; ++i)
+        {
+            auto e = r.create();
+            eids.push_back(e);
+            r.emplace<Pos>(e, Pos{});
+            r.emplace<Vel>(e, Vel{});
+        }
+        std::shuffle(eids.begin(), eids.end(), grng);
+        const std::size_t toDestroy = args.entities * 30u / 100u;
+        for (std::size_t i = 0; i < toDestroy; ++i)
+            r.destroy(eids[i]);
+
+        const std::size_t toCreate = args.entities * 20u / 100u;
+        for (std::size_t i = 0; i < toCreate; ++i)
+        {
+            auto e = r.create();
+            r.emplace<Pos>(e, Pos{});
+            r.emplace<Vel>(e, Vel{});
+        }
+
+        auto grp = r.group<Pos, Vel>();
+        const std::size_t gsize = grp.size();
+        std::uint64_t gsink = 0;
+
+        double total = 0.0;
+        for (std::size_t it = 0; it < args.iterations; ++it)
+        {
+            total += timeSeconds([&]
+            {
+                std::uint64_t local = 0;
+                grp.each([&](Pos &p, Vel &v) { p.x += v.vx; local += 1; });
+                gsink += local;
+            });
+        }
+        std::ostringstream label;
+        label << "group<Pos,Vel> frag avg (per hit)";
+        printRow(label.str(), total / args.iterations, gsize);
+        std::cout << "gsink=" << gsink << "\n";
+    }
+
+    // ============================================================
+    // frag 7sys + group<Pos,Vel>: зеркало сценария из ecs_bench_mine.cpp —
+    // смешанный ворклоад из 7 систем в фрагментированном мире, где система
+    // Pos+Vel идёт через owning-группу. Показывает частичное покрытие:
+    // ускоряется одна система из семи. Контрольная сумма gsink2 обязана
+    // совпасть с PulseECS-зеркалом.
+    // ============================================================
+    {
+        Registry r;
+        std::mt19937 grng(static_cast<std::uint32_t>(args.seed));
+
+        std::vector<Entity> eids;
+        eids.reserve(args.entities);
+        for (std::size_t i = 0; i < args.entities; ++i)
+        {
+            auto e = r.create();
+            eids.push_back(e);
+            r.emplace<Pos>(e, Pos{});
+            r.emplace<Vel>(e, Vel{});
+            if ((i & 1u) == 0u)  r.emplace<Tag>(e, Tag{});
+            if ((i & 3u) == 0u)  r.emplace<Health>(e, Health{});
+            if ((i & 7u) == 0u)  r.emplace<Armor>(e, Armor{});
+            if ((i & 15u) == 0u) r.emplace<Mana>(e, Mana{});
+            if ((i & 31u) == 0u) r.emplace<Marker>(e, Marker{});
+        }
+        std::shuffle(eids.begin(), eids.end(), grng);
+        const std::size_t toDestroy = args.entities * 30u / 100u;
+        for (std::size_t i = 0; i < toDestroy; ++i)
+            r.destroy(eids[i]);
+
+        const std::size_t toCreate = args.entities * 20u / 100u;
+        for (std::size_t i = 0; i < toCreate; ++i)
+        {
+            auto e = r.create();
+            r.emplace<Pos>(e, Pos{});
+            r.emplace<Vel>(e, Vel{});
+            if ((i & 1u) == 0u) r.emplace<Tag>(e, Tag{});
+        }
+
+        // EnTT не имеет registry.alive() — посчитаем через view всех entity
+        std::size_t alive = 0;
+        for (auto _ : r.view<Pos>()) { (void)_; ++alive; }
+
+        auto grp = r.group<Pos, Vel>();
+        std::uint64_t gsink2 = 0;
+
+        // Зеркало ecs_bench_mine.cpp: минимум 5 прогонов против шума.
+        const std::size_t iters = std::max(args.iterations, std::size_t{5});
+
+        double total = 0.0;
+        for (std::size_t it = 0; it < iters; ++it)
+        {
+            total += timeSeconds([&]
+            {
+                std::uint64_t local = 0;
+                // sys 1: Pos+Vel — через owning-группу
+                grp.each([&](Pos &p, Vel &v) { p.x += v.vx; local += 1; });
+                // sys 2..7 — обычные view<>
+                r.view<Pos, Vel, Tag>().each([&](Pos &, Vel &, Tag &t) { t.v ^= 1u; local += 1; });
+                r.view<Health>().each([&](Health &h) { h.hp -= 0.001f; local += 1; });
+                r.view<Health, Armor>().each([&](Health &h, Armor &a) { h.hp += a.def * 0.0001f; local += 1; });
+                r.view<Pos, Tag>().each([&](Pos &p, Tag &t) { p.y += 0.01f * t.v; local += 1; });
+                r.view<Mana>().each([&](Mana &m) { m.mp -= 0.002f; local += 1; });
+                r.view<Vel, Armor>().each([&](Vel &v, Armor &a) { v.vx += a.def * 0.0001f; local += 1; });
+                gsink2 += local;
+            });
+        }
+        std::ostringstream label;
+        label << "frag 7sys + group<Pos,Vel> (alive=" << alive << ") avg (per hit)";
+        printRow(label.str(), total / iters, alive);
+        std::cout << "gsink2=" << gsink2 << "\n";
+    }
+
     return 0;
 }

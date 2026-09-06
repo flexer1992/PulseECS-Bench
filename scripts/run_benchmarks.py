@@ -37,6 +37,8 @@ OPERATIONS = [
     ("get_component", "get<Pos>", "get<Pos>"),
     ("systems_packed", "7 systems mixed (full)", "7 systems mixed"),
     ("systems_frag", "frag 7sys mixed (alive)", "frag 7sys mixed"),
+    ("group_frag", "group<Pos,Vel> frag (owning group)", "group<Pos,Vel> frag"),
+    ("group_frag_7sys", "frag 7sys + group<Pos,Vel>", "7sys + group<Pos,Vel>"),
 ]
 
 DEFAULT_SCALES = [
@@ -77,13 +79,18 @@ def run_benchmark(binary_name: str, entities: int, iterations: int):
 
     cmd = [
         str(bin_path),
-        "--entities", str(entities),
-        "--iterations", str(iterations),
-        "--seed", "1337",
+        "--entities",
+        str(entities),
+        "--iterations",
+        str(iterations),
+        "--seed",
+        "1337",
     ]
 
     start_time = time.time()
-    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.run(
+        cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+    )
     duration = time.time() - start_time
 
     if proc.returncode != 0:
@@ -96,21 +103,36 @@ def run_benchmark(binary_name: str, entities: int, iterations: int):
 
 def main():
     parser = argparse.ArgumentParser(description="Run ECS benchmark matrix")
-    parser.add_argument("--scales", type=str, help="Comma-separated entity counts (e.g. 20000,100000)")
-    parser.add_argument("--iterations", type=int, default=None, help="Override iterations for all scales")
-    parser.add_argument("--quick", action="store_true", help="Quick run with 1 iteration per scale")
+    parser.add_argument(
+        "--scales", type=str, help="Comma-separated entity counts (e.g. 20000,100000)"
+    )
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=None,
+        help="Override iterations for all scales",
+    )
+    parser.add_argument(
+        "--quick", action="store_true", help="Quick run with 1 iteration per scale"
+    )
     args = parser.parse_args()
 
     if args.scales:
         scale_counts = [int(s.strip().replace("_", "")) for s in args.scales.split(",")]
         scales = []
         for s in scale_counts:
-            iters = args.iterations or (1 if args.quick else (2 if s >= 10_000_000 else 3 if s >= 1_000_000 else 5))
+            iters = args.iterations or (
+                1
+                if args.quick
+                else (2 if s >= 10_000_000 else 3 if s >= 1_000_000 else 5)
+            )
             scales.append((s, iters))
     else:
         scales = []
         for s, iters in DEFAULT_SCALES:
-            actual_iters = 1 if args.quick else (args.iterations if args.iterations else iters)
+            actual_iters = (
+                1 if args.quick else (args.iterations if args.iterations else iters)
+            )
             scales.append((s, actual_iters))
 
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
@@ -131,7 +153,7 @@ def main():
         "operations": [(op[0], op[1]) for op in OPERATIONS],
         "scales": [s[0] for s in scales],
         "results": {},  # str(scale) -> benchmark_label -> op_id -> ns_per_op
-        "sinks": {},    # str(scale) -> sink_val
+        "sinks": {},  # str(scale) -> sink_val
     }
 
     flat_records = []
@@ -154,13 +176,15 @@ def main():
 
             for op_id, op_name, _ in OPERATIONS:
                 val = res.get(op_id)
-                flat_records.append({
-                    "scale": entities,
-                    "benchmark": label,
-                    "operation_id": op_id,
-                    "operation_name": op_name,
-                    "ns_per_op": val,
-                })
+                flat_records.append(
+                    {
+                        "scale": entities,
+                        "benchmark": label,
+                        "operation_id": op_id,
+                        "operation_name": op_name,
+                        "ns_per_op": val,
+                    }
+                )
 
         # Verify sink consistency
         distinct_sinks = set(scale_sinks.values())
@@ -173,13 +197,20 @@ def main():
 
         # Print brief table for this scale
         print("\n  Summary (ns/op, lower is faster):")
-        hdr = f"  {'Operation':<32} | " + " | ".join(f"{b[1]:>9}" for b in BENCHMARKS) + " | Fastest"
+        hdr = (
+            f"  {'Operation':<32} | "
+            + " | ".join(f"{b[1]:>9}" for b in BENCHMARKS)
+            + " | Fastest"
+        )
         print("  " + "-" * (len(hdr) - 2))
         print(hdr)
         print("  " + "-" * (len(hdr) - 2))
 
         for op_id, op_name, _ in OPERATIONS:
-            vals = [all_data["results"][scale_key][b[1]].get(op_id, float("inf")) for b in BENCHMARKS]
+            vals = [
+                all_data["results"][scale_key][b[1]].get(op_id, float("inf"))
+                for b in BENCHMARKS
+            ]
             min_v = min(vals) if vals else None
             row_items = []
             for b in BENCHMARKS:
@@ -211,7 +242,16 @@ def main():
     # Save CSV
     csv_path = RESULTS_DIR / "benchmark_results.csv"
     with open(csv_path, "w", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["scale", "benchmark", "operation_id", "operation_name", "ns_per_op"])
+        writer = csv.DictWriter(
+            f,
+            fieldnames=[
+                "scale",
+                "benchmark",
+                "operation_id",
+                "operation_name",
+                "ns_per_op",
+            ],
+        )
         writer.writeheader()
         writer.writerows(flat_records)
     print(f"Saved CSV results to: {csv_path}")

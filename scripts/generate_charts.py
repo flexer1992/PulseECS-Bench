@@ -28,41 +28,69 @@ PALETTE = {
     "text_muted": "#8b949e",
     "grid": "#21262d",
     # ECS Library Colors
-    "PulseECS": "#38bdf8",     # Electric cyan / sky blue
-    "EnTT": "#f43f5e",       # Rose / crimson
-    "flecs": "#10b981",      # Emerald green
-    "gaia-ecs": "#f59e0b",   # Amber / orange
-    "pico_ecs": "#a855f7",   # Purple
-    "EntityX": "#64748b",    # Slate gray
+    "PulseECS": "#38bdf8",  # Electric cyan / sky blue
+    "EnTT": "#f43f5e",  # Rose / crimson
+    "flecs": "#10b981",  # Emerald green
+    "gaia-ecs": "#f59e0b",  # Amber / orange
+    "pico_ecs": "#a855f7",  # Purple
+    "EntityX": "#64748b",  # Slate gray
 }
 
 STYLES = {
-    "PulseECS": {"color": PALETTE["PulseECS"], "marker": "o", "linewidth": 2.8, "zorder": 10},
+    "PulseECS": {
+        "color": PALETTE["PulseECS"],
+        "marker": "o",
+        "linewidth": 2.8,
+        "zorder": 10,
+    },
     "EnTT": {"color": PALETTE["EnTT"], "marker": "s", "linewidth": 2.0, "zorder": 8},
     "flecs": {"color": PALETTE["flecs"], "marker": "^", "linewidth": 2.0, "zorder": 9},
-    "gaia-ecs": {"color": PALETTE["gaia-ecs"], "marker": "v", "linewidth": 1.6, "zorder": 6},
-    "pico_ecs": {"color": PALETTE["pico_ecs"], "marker": "D", "linewidth": 1.6, "zorder": 7},
-    "EntityX": {"color": PALETTE["EntityX"], "marker": "x", "linewidth": 1.4, "zorder": 5, "linestyle": "--"},
+    "gaia-ecs": {
+        "color": PALETTE["gaia-ecs"],
+        "marker": "v",
+        "linewidth": 1.6,
+        "zorder": 6,
+    },
+    "pico_ecs": {
+        "color": PALETTE["pico_ecs"],
+        "marker": "D",
+        "linewidth": 1.6,
+        "zorder": 7,
+    },
+    "EntityX": {
+        "color": PALETTE["EntityX"],
+        "marker": "x",
+        "linewidth": 1.4,
+        "zorder": 5,
+        "linestyle": "--",
+    },
 }
 
 
 def setup_dark_style():
-    plt.rcParams.update({
-        "figure.facecolor": PALETTE["bg_dark"],
-        "axes.facecolor": PALETTE["bg_card"],
-        "axes.edgecolor": PALETTE["border"],
-        "axes.labelcolor": PALETTE["text_main"],
-        "text.color": PALETTE["text_main"],
-        "xtick.color": PALETTE["text_muted"],
-        "ytick.color": PALETTE["text_muted"],
-        "grid.color": PALETTE["grid"],
-        "grid.linestyle": ":",
-        "grid.linewidth": 0.8,
-        "grid.alpha": 0.9,
-        "font.family": "sans-serif",
-        "font.sans-serif": ["SF Pro Display", "Helvetica Neue", "Arial", "DejaVu Sans"],
-        "font.size": 11,
-    })
+    plt.rcParams.update(
+        {
+            "figure.facecolor": PALETTE["bg_dark"],
+            "axes.facecolor": PALETTE["bg_card"],
+            "axes.edgecolor": PALETTE["border"],
+            "axes.labelcolor": PALETTE["text_main"],
+            "text.color": PALETTE["text_main"],
+            "xtick.color": PALETTE["text_muted"],
+            "ytick.color": PALETTE["text_muted"],
+            "grid.color": PALETTE["grid"],
+            "grid.linestyle": ":",
+            "grid.linewidth": 0.8,
+            "grid.alpha": 0.9,
+            "font.family": "sans-serif",
+            "font.sans-serif": [
+                "SF Pro Display",
+                "Helvetica Neue",
+                "Arial",
+                "DejaVu Sans",
+            ],
+            "font.size": 11,
+        }
+    )
 
 
 def load_data():
@@ -96,12 +124,18 @@ def plot_scaling_curves(data):
         y=0.98,
     )
 
-    scale_labels = [f"{s // 1000}K" if s < 1_000_000 else f"{s // 1_000_000}M" for s in scales]
+    scale_labels = [
+        f"{s // 1000}K" if s < 1_000_000 else f"{s // 1_000_000}M" for s in scales
+    ]
 
     for ax, (op_id, title, ylabel) in zip(axes.flatten(), key_ops):
         ax.set_facecolor(PALETTE["bg_card"])
-        ax.set_title(title, fontsize=14, fontweight="bold", pad=12, color=PALETTE["text_main"])
-        ax.set_xlabel("Entity Count (log scale)", fontsize=11, color=PALETTE["text_muted"])
+        ax.set_title(
+            title, fontsize=14, fontweight="bold", pad=12, color=PALETTE["text_main"]
+        )
+        ax.set_xlabel(
+            "Entity Count (log scale)", fontsize=11, color=PALETTE["text_muted"]
+        )
         ax.set_ylabel(ylabel, fontsize=11, color=PALETTE["text_muted"])
         ax.grid(True)
         ax.set_xscale("log")
@@ -137,8 +171,18 @@ def plot_scaling_curves(data):
                 f"PulseECS: {my_10m:.1f} ns\nEnTT: {entt_10m:.1f} ns\n({ratio:.1f}x faster)",
                 xy=(scales[-1], my_10m),
                 xytext=(scales[-4] * 1.5, 62),
-                arrowprops=dict(facecolor=PALETTE["PulseECS"], edgecolor=PALETTE["PulseECS"], arrowstyle="->", lw=1.5),
-                bbox=dict(boxstyle="round,pad=0.5", fc=PALETTE["bg_dark"], ec=PALETTE["PulseECS"], lw=1.2),
+                arrowprops=dict(
+                    facecolor=PALETTE["PulseECS"],
+                    edgecolor=PALETTE["PulseECS"],
+                    arrowstyle="->",
+                    lw=1.5,
+                ),
+                bbox=dict(
+                    boxstyle="round,pad=0.5",
+                    fc=PALETTE["bg_dark"],
+                    ec=PALETTE["PulseECS"],
+                    lw=1.2,
+                ),
                 color=PALETTE["text_main"],
                 fontsize=9.5,
                 fontweight="semibold",
@@ -151,8 +195,18 @@ def plot_scaling_curves(data):
                 f"PulseECS: {my_10m:.1f} ns\nEnTT: {entt_10m:.1f} ns\n({ratio:.1f}x faster)",
                 xy=(scales[-1], my_10m),
                 xytext=(scales[-4] * 0.8, 235),
-                arrowprops=dict(facecolor=PALETTE["PulseECS"], edgecolor=PALETTE["PulseECS"], arrowstyle="->", lw=1.5),
-                bbox=dict(boxstyle="round,pad=0.5", fc=PALETTE["bg_dark"], ec=PALETTE["PulseECS"], lw=1.2),
+                arrowprops=dict(
+                    facecolor=PALETTE["PulseECS"],
+                    edgecolor=PALETTE["PulseECS"],
+                    arrowstyle="->",
+                    lw=1.5,
+                ),
+                bbox=dict(
+                    boxstyle="round,pad=0.5",
+                    fc=PALETTE["bg_dark"],
+                    ec=PALETTE["PulseECS"],
+                    lw=1.2,
+                ),
                 color=PALETTE["text_main"],
                 fontsize=9.5,
                 fontweight="semibold",
@@ -195,7 +249,10 @@ def plot_speedup_vs_entt(data):
         y=0.98,
     )
 
-    for ax, scale, title in [(ax1, "1000000", "At 1,000,000 Entities"), (ax2, "10000000", "At 10,000,000 Entities (Stress)")]:
+    for ax, scale, title in [
+        (ax1, "1000000", "At 1,000,000 Entities"),
+        (ax2, "10000000", "At 10,000,000 Entities (Stress)"),
+    ]:
         ax.set_facecolor(PALETTE["bg_card"])
         ax.set_title(title, fontsize=14, fontweight="bold", pad=12)
         ax.grid(True, axis="x")
@@ -209,9 +266,18 @@ def plot_speedup_vs_entt(data):
             speedups.append(ratio)
 
         y_pos = np.arange(len(op_labels))
-        colors = [PALETTE["PulseECS"] if s >= 1.0 else PALETTE["EnTT"] for s in speedups]
+        colors = [
+            PALETTE["PulseECS"] if s >= 1.0 else PALETTE["EnTT"] for s in speedups
+        ]
 
-        bars = ax.barh(y_pos, speedups, color=colors, height=0.62, edgecolor=PALETTE["border"], lw=0.8)
+        bars = ax.barh(
+            y_pos,
+            speedups,
+            color=colors,
+            height=0.62,
+            edgecolor=PALETTE["border"],
+            lw=0.8,
+        )
 
         # Baseline at 1.0x
         ax.axvline(1.0, color="#ffffff", linestyle="--", linewidth=1.5, alpha=0.7)
@@ -220,14 +286,34 @@ def plot_speedup_vs_entt(data):
             w = bar.get_width()
             text = f"{ratio:.2f}x"
             if ratio >= 1.0:
-                ax.text(w + 0.10, bar.get_y() + bar.get_height() / 2, text,
-                        va="center", ha="left", fontsize=10.5, fontweight="bold", color=PALETTE["PulseECS"])
+                ax.text(
+                    w + 0.10,
+                    bar.get_y() + bar.get_height() / 2,
+                    text,
+                    va="center",
+                    ha="left",
+                    fontsize=10.5,
+                    fontweight="bold",
+                    color=PALETTE["PulseECS"],
+                )
             else:
                 # Place label neatly to avoid collision with baseline 1.0x
-                ax.text(w + 0.18, bar.get_y() + bar.get_height() / 2, text,
-                        va="center", ha="left", fontsize=10.5, fontweight="bold", color=PALETTE["EnTT"])
+                ax.text(
+                    w + 0.18,
+                    bar.get_y() + bar.get_height() / 2,
+                    text,
+                    va="center",
+                    ha="left",
+                    fontsize=10.5,
+                    fontweight="bold",
+                    color=PALETTE["EnTT"],
+                )
 
-        ax.set_xlabel("Speedup Factor (EnTT time / PulseECS time)", fontsize=11, color=PALETTE["text_muted"])
+        ax.set_xlabel(
+            "Speedup Factor (EnTT time / PulseECS time)",
+            fontsize=11,
+            color=PALETTE["text_muted"],
+        )
         ax.set_xlim(0, max(speedups) * 1.18)
 
     ax1.set_yticks(np.arange(len(ops)))
@@ -237,7 +323,12 @@ def plot_speedup_vs_entt(data):
     plt.tight_layout(rect=[0, 0.03, 1, 0.94])
     out_path = ASSETS_DIR / "pulse_ecs_vs_entt_speedup.png"
     plt.savefig(out_path, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
-    plt.savefig(ASSETS_DIR / "my_ecs_vs_entt_speedup.png", dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.savefig(
+        ASSETS_DIR / "my_ecs_vs_entt_speedup.png",
+        dpi=300,
+        facecolor=fig.get_facecolor(),
+        edgecolor="none",
+    )
     plt.close()
     print(f"Generated: {out_path}")
 
@@ -270,7 +361,11 @@ def plot_archetype_vs_sparseset(data):
     x = np.arange(len(categories))
     width = 0.25
 
-    target_benches = [("flecs", "flecs (Archetype)"), ("PulseECS", "PulseECS (Sparse-Set)"), ("EnTT", "EnTT (Sparse-Set)")]
+    target_benches = [
+        ("flecs", "flecs (Archetype)"),
+        ("PulseECS", "PulseECS (Sparse-Set)"),
+        ("EnTT", "EnTT (Sparse-Set)"),
+    ]
 
     for idx, (bench_key, display_name) in enumerate(target_benches):
         vals = [results[scale][bench_key][op_id] for _, op_id, _ in categories]
@@ -296,7 +391,11 @@ def plot_archetype_vs_sparseset(data):
                 rotation=0,
             )
 
-    ax.set_ylabel("Execution Time (ns / op, lower is better)", fontsize=12, color=PALETTE["text_muted"])
+    ax.set_ylabel(
+        "Execution Time (ns / op, lower is better)",
+        fontsize=12,
+        color=PALETTE["text_muted"],
+    )
     ax.set_xticks(x)
     ax.set_xticklabels([c[0] for c in categories], fontsize=11)
     ax.grid(True, axis="y")
@@ -314,8 +413,18 @@ def plot_archetype_vs_sparseset(data):
         "Sparse-Sets dominate\nstructural operations\n& random lookups",
         xy=(1.0, 60),
         xytext=(0.4, 115),
-        arrowprops=dict(facecolor=PALETTE["PulseECS"], edgecolor=PALETTE["PulseECS"], arrowstyle="->", lw=1.5),
-        bbox=dict(boxstyle="round,pad=0.5", fc=PALETTE["bg_dark"], ec=PALETTE["PulseECS"], lw=1.2),
+        arrowprops=dict(
+            facecolor=PALETTE["PulseECS"],
+            edgecolor=PALETTE["PulseECS"],
+            arrowstyle="->",
+            lw=1.5,
+        ),
+        bbox=dict(
+            boxstyle="round,pad=0.5",
+            fc=PALETTE["bg_dark"],
+            ec=PALETTE["PulseECS"],
+            lw=1.2,
+        ),
         fontsize=10.5,
         fontweight="semibold",
         color=PALETTE["text_main"],
@@ -325,8 +434,15 @@ def plot_archetype_vs_sparseset(data):
         "Archetype dominates\ndense system queries\n(contiguous chunks)",
         xy=(4 - width, 0.7),
         xytext=(3.2, 55),
-        arrowprops=dict(facecolor=PALETTE["flecs"], edgecolor=PALETTE["flecs"], arrowstyle="->", lw=1.5),
-        bbox=dict(boxstyle="round,pad=0.5", fc=PALETTE["bg_dark"], ec=PALETTE["flecs"], lw=1.2),
+        arrowprops=dict(
+            facecolor=PALETTE["flecs"],
+            edgecolor=PALETTE["flecs"],
+            arrowstyle="->",
+            lw=1.5,
+        ),
+        bbox=dict(
+            boxstyle="round,pad=0.5", fc=PALETTE["bg_dark"], ec=PALETTE["flecs"], lw=1.2
+        ),
         fontsize=10.5,
         fontweight="semibold",
         color=PALETTE["text_main"],
@@ -357,7 +473,9 @@ def plot_fragmentation_impact(data):
         color=PALETTE["text_main"],
     )
 
-    scale_labels = [f"{s // 1000}K" if s < 1_000_000 else f"{s // 1_000_000}M" for s in scales]
+    scale_labels = [
+        f"{s // 1000}K" if s < 1_000_000 else f"{s // 1_000_000}M" for s in scales
+    ]
 
     for bench in benches:
         ratios = []
@@ -382,9 +500,20 @@ def plot_fragmentation_impact(data):
     ax.set_xticks(scales)
     ax.set_xticklabels(scale_labels)
     ax.set_xlabel("Entity Count (log scale)", fontsize=12, color=PALETTE["text_muted"])
-    ax.set_ylabel("Penalty Ratio (Frag time / Packed time)", fontsize=12, color=PALETTE["text_muted"])
+    ax.set_ylabel(
+        "Penalty Ratio (Frag time / Packed time)",
+        fontsize=12,
+        color=PALETTE["text_muted"],
+    )
     ax.grid(True)
-    ax.axhline(1.0, color="#ffffff", linestyle="--", linewidth=1.2, alpha=0.5, label="No Penalty (1.0x)")
+    ax.axhline(
+        1.0,
+        color="#ffffff",
+        linestyle="--",
+        linewidth=1.2,
+        alpha=0.5,
+        label="No Penalty (1.0x)",
+    )
 
     ax.legend(
         loc="upper left",
@@ -400,6 +529,147 @@ def plot_fragmentation_impact(data):
     print(f"Generated: {out_path}")
 
 
+def plot_owning_groups(data):
+    """Owning Groups: fragmented iteration via group vs each vs view, plus scaling vs EnTT's group."""
+    scales = data["scales"]
+    results = data["results"]
+
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(16, 7), dpi=300)
+    fig.patch.set_facecolor(PALETTE["bg_dark"])
+
+    fig.suptitle(
+        "Owning Groups: Fragmented-World Iteration Stays Packed Without Manual Defragmentation",
+        fontsize=17,
+        fontweight="bold",
+        color=PALETTE["text_main"],
+        y=0.99,
+    )
+
+    # ---- Left panel: group<Pos,Vel> scaling, PulseECS vs EnTT vs flecs ----
+    group_series = [
+        ("PulseECS", "group_frag"),
+        ("EnTT", "group_frag"),
+        ("flecs", "each_packed"),  # archetype: always grouped by design
+    ]
+    scale_labels = [
+        f"{s // 1000}K" if s < 1_000_000 else f"{s // 1_000_000}M" for s in scales
+    ]
+
+    for bench, op in group_series:
+        vals = []
+        for s in scales:
+            v = results[str(s)][bench].get(op)
+            vals.append(v if v is not None else np.nan)
+        st = STYLES.get(bench, {})
+        ax1.plot(
+            scales,
+            vals,
+            label=f"{bench}"
+            + (" (archetype each)" if bench == "flecs" else " group<Pos,Vel>"),
+            color=st.get("color"),
+            marker=st.get("marker"),
+            linewidth=st.get("linewidth", 2),
+            zorder=st.get("zorder", 5),
+            markersize=7,
+        )
+
+    ax1.set_xscale("log")
+    ax1.set_yscale("log")
+    ax1.set_xticks(scales)
+    ax1.set_xticklabels(scale_labels)
+    ax1.set_xlabel("Entity Count (log scale)", fontsize=12, color=PALETTE["text_muted"])
+    ax1.set_ylabel("ns / entity (log scale)", fontsize=12, color=PALETTE["text_muted"])
+    ax1.set_title(
+        "group<Pos,Vel> Iteration After 30% Delete + 20% Re-add", fontsize=13, pad=10
+    )
+    ax1.grid(True, which="both")
+    ax1.legend(
+        loc="upper left",
+        facecolor=PALETTE["bg_card"],
+        edgecolor=PALETTE["border"],
+        fontsize=11,
+    )
+
+    # ---- Right panel: 10M fragmented world — plain iteration vs opt-in group ----
+    # Только реально измеренные значения из JSON: systems_frag (голая итерация
+    # в фрагментированном мире) и group_frag (та же структура мира, итерация
+    # через owning-группу). flecs — archetype: его обычная итерация уже сгруппирована.
+    scale_10m = results["10000000"]
+    bars = [
+        (
+            "PulseECS\nplain each<> (frag 7 sys)",
+            scale_10m["PulseECS"]["systems_frag"],
+            PALETTE["PulseECS"],
+        ),
+        (
+            "PulseECS\ngroup<Pos,Vel>",
+            scale_10m["PulseECS"]["group_frag"],
+            "#22d3ee",
+        ),
+        (
+            "EnTT\nplain view<> (frag 7 sys)",
+            scale_10m["EnTT"]["systems_frag"],
+            PALETTE["EnTT"],
+        ),
+        (
+            "EnTT\ngroup<Pos,Vel>",
+            scale_10m["EnTT"]["group_frag"],
+            "#fda4af",
+        ),
+        (
+            "flecs\narchetype (frag 7 sys)",
+            scale_10m["flecs"]["systems_frag"],
+            PALETTE["flecs"],
+        ),
+        (
+            "PulseECS\nfrag 7sys + group<Pos,Vel>",
+            scale_10m["PulseECS"]["group_frag_7sys"],
+            "#0ea5e9",
+        ),
+        (
+            "EnTT\nfrag 7sys + group<Pos,Vel>",
+            scale_10m["EnTT"]["group_frag_7sys"],
+            "#f472b6",
+        ),
+    ]
+
+    names = [b[0] for b in bars]
+    vals = [b[1] for b in bars]
+    cols = [b[2] for b in bars]
+
+    bar_plot = ax2.bar(
+        names, vals, color=cols, edgecolor=PALETTE["border"], lw=0.8, width=0.62
+    )
+    ax2.set_yscale("log")
+    ax2.set_ylabel("ns / entity (log scale)", fontsize=12, color=PALETTE["text_muted"])
+    ax2.set_title(
+        "Fragmented World at 10,000,000 Entities: Plain Iteration vs Owning Group",
+        fontsize=13,
+        pad=10,
+    )
+    ax2.grid(True, which="both", axis="y")
+    ax2.tick_params(axis="x", labelsize=9.5)
+    plt.setp(ax2.get_xticklabels(), rotation=12, ha="right")
+
+    for rect, v in zip(bar_plot, vals):
+        ax2.text(
+            rect.get_x() + rect.get_width() / 2,
+            rect.get_height() * 1.12,
+            f"{v:.2f}",
+            ha="center",
+            va="bottom",
+            fontsize=10.5,
+            fontweight="bold",
+            color=PALETTE["text_main"],
+        )
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    out_path = ASSETS_DIR / "owning_groups.png"
+    plt.savefig(out_path, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
+    plt.close()
+    print(f"Generated: {out_path}")
+
+
 def plot_hero_card(data):
     """Headline infographic card designed for the LinkedIn post & GitHub README header."""
     results = data["results"]
@@ -410,10 +680,21 @@ def plot_hero_card(data):
     fig.patch.set_facecolor(PALETTE["bg_dark"])
 
     # Header section
-    fig.text(0.08, 0.92, "PULSE-ECS BENCHMARK: 10,000,000 ENTITIES STRESS TEST",
-             fontsize=20, fontweight="bold", color=PALETTE["PulseECS"])
-    fig.text(0.08, 0.87, "Workload & Architecture Comparison on Apple M3 Pro | Release -O3 -march=native | Validated via sink",
-             fontsize=12, color=PALETTE["text_muted"])
+    fig.text(
+        0.08,
+        0.92,
+        "PULSE-ECS BENCHMARK: 10,000,000 ENTITIES STRESS TEST",
+        fontsize=20,
+        fontweight="bold",
+        color=PALETTE["PulseECS"],
+    )
+    fig.text(
+        0.08,
+        0.87,
+        "Workload & Architecture Comparison on Apple M3 Pro | Release -O3 -march=native | Validated via sink",
+        fontsize=12,
+        color=PALETTE["text_muted"],
+    )
 
     # 3 Stat Cards on top dynamically computed
     my_get = results[scale_10m]["PulseECS"]["get_component"]
@@ -429,12 +710,34 @@ def plot_hero_card(data):
     frag_speedup = entt_frag / my_frag
 
     stat_boxes = [
-        ("Direct Component Access", "get<Pos>", f"{my_get:.2f} ns", f"{get_speedup:.1f}x", f"faster than EnTT ({entt_get:.1f} ns)"),
-        ("Entity Destruction", "destroyEntity", f"{my_dest:.1f} ns", f"{dest_speedup:.1f}x", f"faster than EnTT ({entt_dest:.1f} ns)"),
-        ("Fragmented Iteration", "frag 7 systems", f"{my_frag:.1f} ns", f"{frag_speedup:.1f}x", f"faster than EnTT ({entt_frag:.1f} ns)"),
+        (
+            "Direct Component Access",
+            "get<Pos>",
+            f"{my_get:.2f} ns",
+            f"{get_speedup:.1f}x",
+            f"faster than EnTT ({entt_get:.1f} ns)",
+        ),
+        (
+            "Entity Destruction",
+            "destroyEntity",
+            f"{my_dest:.1f} ns",
+            f"{dest_speedup:.1f}x",
+            f"faster than EnTT ({entt_dest:.1f} ns)",
+        ),
+        (
+            "Fragmented Iteration",
+            "frag 7 systems",
+            f"{my_frag:.1f} ns",
+            f"{frag_speedup:.1f}x",
+            f"faster than EnTT ({entt_frag:.1f} ns)",
+        ),
     ]
 
-    card_coords = [(0.08, 0.65, 0.26, 0.17), (0.37, 0.65, 0.26, 0.17), (0.66, 0.65, 0.26, 0.17)]
+    card_coords = [
+        (0.08, 0.65, 0.26, 0.17),
+        (0.37, 0.65, 0.26, 0.17),
+        (0.66, 0.65, 0.26, 0.17),
+    ]
 
     for (title, metric, val, badge, comp), (x, y, w, h) in zip(stat_boxes, card_coords):
         card_ax = fig.add_axes([x, y, w, h], facecolor=PALETTE["bg_card"])
@@ -443,9 +746,25 @@ def plot_hero_card(data):
         card_ax.set_xticks([])
         card_ax.set_yticks([])
 
-        card_ax.text(0.06, 0.82, title.upper(), fontsize=10, fontweight="bold", color=PALETTE["text_muted"])
-        card_ax.text(0.06, 0.44, val, fontsize=22, fontweight="heavy", color=PALETTE["text_main"])
-        card_ax.text(0.55, 0.44, f"[{badge}]", fontsize=15, fontweight="bold", color=PALETTE["PulseECS"])
+        card_ax.text(
+            0.06,
+            0.82,
+            title.upper(),
+            fontsize=10,
+            fontweight="bold",
+            color=PALETTE["text_muted"],
+        )
+        card_ax.text(
+            0.06, 0.44, val, fontsize=22, fontweight="heavy", color=PALETTE["text_main"]
+        )
+        card_ax.text(
+            0.55,
+            0.44,
+            f"[{badge}]",
+            fontsize=15,
+            fontweight="bold",
+            color=PALETTE["PulseECS"],
+        )
         card_ax.text(0.06, 0.14, comp, fontsize=9.5, color=PALETTE["text_muted"])
 
     # Bottom comparison chart: 10M entities head-to-head across all engines
@@ -478,10 +797,14 @@ def plot_hero_card(data):
             lw=0.6,
         )
 
-    ax_bottom.set_ylabel("Execution Time (ns / op, log scale)", fontsize=11, color=PALETTE["text_muted"])
+    ax_bottom.set_ylabel(
+        "Execution Time (ns / op, log scale)", fontsize=11, color=PALETTE["text_muted"]
+    )
     ax_bottom.set_yscale("log")
     ax_bottom.set_xticks(x)
-    ax_bottom.set_xticklabels([lbl for lbl, _ in ops_to_show], fontsize=11, fontweight="medium")
+    ax_bottom.set_xticklabels(
+        [lbl for lbl, _ in ops_to_show], fontsize=11, fontweight="medium"
+    )
     ax_bottom.grid(True, which="both", axis="y")
     ax_bottom.legend(
         loc="upper right",
@@ -490,7 +813,11 @@ def plot_hero_card(data):
         edgecolor=PALETTE["border"],
         fontsize=10.5,
     )
-    ax_bottom.set_title("Performance across Operations at 10,000,000 Entities (Lower is Better)", fontsize=13, pad=10)
+    ax_bottom.set_title(
+        "Performance across Operations at 10,000,000 Entities (Lower is Better)",
+        fontsize=13,
+        pad=10,
+    )
 
     out_path = ASSETS_DIR / "hero_benchmark_card.png"
     plt.savefig(out_path, dpi=300, facecolor=fig.get_facecolor(), edgecolor="none")
@@ -530,20 +857,52 @@ def plot_social_preview(data):
     frame.set_yticks([])
 
     # Left Section: Brand & Headline
-    frame.text(0.05, 0.86, "C++20 ENGINE CORE & ARCHITECTURE BENCHMARK",
-               fontsize=11, fontweight="bold", color=PALETTE["text_muted"])
-    frame.text(0.05, 0.70, "PulseECS",
-               fontsize=40, fontweight="heavy", color=PALETTE["PulseECS"])
-    frame.text(0.05, 0.58, "Benchmarking 6 ECS Frameworks up to 10M Entities",
-               fontsize=16, fontweight="bold", color=PALETTE["text_main"])
-    frame.text(0.05, 0.49, "PulseECS  •  EnTT  •  flecs  •  gaia-ecs  •  pico_ecs  •  EntityX",
-               fontsize=12, color=PALETTE["text_muted"])
+    frame.text(
+        0.05,
+        0.86,
+        "C++20 ENGINE CORE & ARCHITECTURE BENCHMARK",
+        fontsize=11,
+        fontweight="bold",
+        color=PALETTE["text_muted"],
+    )
+    frame.text(
+        0.05,
+        0.70,
+        "PulseECS",
+        fontsize=40,
+        fontweight="heavy",
+        color=PALETTE["PulseECS"],
+    )
+    frame.text(
+        0.05,
+        0.58,
+        "Benchmarking 6 ECS Frameworks up to 10M Entities",
+        fontsize=16,
+        fontweight="bold",
+        color=PALETTE["text_main"],
+    )
+    frame.text(
+        0.05,
+        0.49,
+        "PulseECS  •  EnTT  •  flecs  •  gaia-ecs  •  pico_ecs  •  EntityX",
+        fontsize=12,
+        color=PALETTE["text_muted"],
+    )
 
     # Bullet takeaways
     takeaways = [
-        ("• Pure POD structs & zero-sized tags via [[no_unique_address]]", PALETTE["PulseECS"]),
-        ("• On-demand pool defragmentation recovers iteration to 1.77 ns/op", PALETTE["text_muted"]),
-        ("• Empirical study on Apple M3 Pro with verified sink accumulation", PALETTE["text_muted"]),
+        (
+            "• Pure POD structs & zero-sized tags via [[no_unique_address]]",
+            PALETTE["PulseECS"],
+        ),
+        (
+            "• On-demand pool defragmentation recovers iteration to 1.77 ns/op",
+            PALETTE["text_muted"],
+        ),
+        (
+            "• Empirical study on Apple M3 Pro with verified sink accumulation",
+            PALETTE["text_muted"],
+        ),
     ]
     for idx, (text, col) in enumerate(takeaways):
         frame.text(0.05, 0.38 - idx * 0.07, text, fontsize=11, color=col)
@@ -552,14 +911,36 @@ def plot_social_preview(data):
     badges = ["C++20", "Release -O3", "Sparse-Set", "Pure POD", "MIT License"]
     badge_x = 0.05
     for b in badges:
-        frame.text(badge_x, 0.10, f"[{b}]", fontsize=10.5, fontweight="bold", color=PALETTE["PulseECS"])
+        frame.text(
+            badge_x,
+            0.10,
+            f"[{b}]",
+            fontsize=10.5,
+            fontweight="bold",
+            color=PALETTE["PulseECS"],
+        )
         badge_x += 0.11
 
     # Right Section: 3 High-Impact Cards
     cards_data = [
-        ("RANDOM LOOKUP (get<Pos>)", f"{my_get:.2f} ns", f"{get_speedup:.1f}x vs EnTT ({entt_get:.1f} ns)", PALETTE["PulseECS"]),
-        ("STRUCTURAL MUTATION (add)", f"{my_add:.2f} ns", f"vs EnTT ({entt_add:.1f} ns) & flecs (75 ns)", PALETTE["PulseECS"]),
-        ("DENSE ARCHETYPE QUERY", f"{flecs_query:.2f} ns", "flecs chunked storage", PALETTE["flecs"]),
+        (
+            "RANDOM LOOKUP (get<Pos>)",
+            f"{my_get:.2f} ns",
+            f"{get_speedup:.1f}x vs EnTT ({entt_get:.1f} ns)",
+            PALETTE["PulseECS"],
+        ),
+        (
+            "STRUCTURAL MUTATION (add)",
+            f"{my_add:.2f} ns",
+            f"vs EnTT ({entt_add:.1f} ns) & flecs (75 ns)",
+            PALETTE["PulseECS"],
+        ),
+        (
+            "DENSE ARCHETYPE QUERY",
+            f"{flecs_query:.2f} ns",
+            "flecs chunked storage",
+            PALETTE["flecs"],
+        ),
     ]
 
     card_y = 0.65
@@ -570,7 +951,14 @@ def plot_social_preview(data):
         box.set_xticks([])
         box.set_yticks([])
 
-        box.text(0.08, 0.76, title, fontsize=9.5, fontweight="bold", color=PALETTE["text_muted"])
+        box.text(
+            0.08,
+            0.76,
+            title,
+            fontsize=9.5,
+            fontweight="bold",
+            color=PALETTE["text_muted"],
+        )
         box.text(0.08, 0.38, metric, fontsize=22, fontweight="heavy", color=accent)
         box.text(0.08, 0.12, sub, fontsize=10, color=PALETTE["text_muted"])
         card_y -= 0.27
@@ -591,6 +979,7 @@ def main():
     plot_speedup_vs_entt(data)
     plot_archetype_vs_sparseset(data)
     plot_fragmentation_impact(data)
+    plot_owning_groups(data)
     plot_hero_card(data)
     plot_social_preview(data)
     print("All charts generated successfully in assets/!")

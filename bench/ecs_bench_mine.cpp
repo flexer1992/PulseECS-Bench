@@ -451,5 +451,137 @@ int main(int argc, char **argv)
     }
 
     std::cout << "\nsink=" << sink << "\n";
+
+    // ============================================================
+    // Owning group: frag<Pos,Vel> iteration (в sink НЕ входит)
+    //
+    // Сценарий исключительно для owning-групп (EnTT/PulseECS): у flecs
+    // archetype-итерация всегда «в группе», pico/EntityX/gaia аналога не
+    // имеют — в сводной таблице у них будет «—».
+    // Размещён ПОСЛЕ печати sink и использует собственный rng, поэтому не
+    // влияет на контроль эквивалентности (состав мира выше не меняет).
+    // ============================================================
+    {
+        engine::World world;
+        std::mt19937 grng{static_cast<std::uint32_t>(args.seed)};
+
+        std::vector<engine::EntityId> eids;
+        eids.reserve(args.entities);
+        for (std::size_t i = 0; i < args.entities; ++i)
+        {
+            auto e = world.createEntity();
+            eids.push_back(e);
+            world.addComponent<Pos>(e, Pos{});
+            world.addComponent<Vel>(e, Vel{});
+        }
+        std::shuffle(eids.begin(), eids.end(), grng);
+        const std::size_t toDestroy = args.entities * 30u / 100u;
+        for (std::size_t i = 0; i < toDestroy; ++i)
+            world.destroyEntity(eids[i]);
+
+        const std::size_t toCreate = args.entities * 20u / 100u;
+        for (std::size_t i = 0; i < toCreate; ++i)
+        {
+            auto e = world.createEntity();
+            world.addComponent<Pos>(e, Pos{});
+            world.addComponent<Vel>(e, Vel{});
+        }
+
+        auto grp = world.group<Pos, Vel>();
+        const std::size_t gsize = grp.size();
+        std::uint64_t gsink = 0;
+
+        double total = 0.0;
+        for (std::size_t it = 0; it < args.iterations; ++it)
+        {
+            total += timeSeconds([&]
+            {
+                std::uint64_t local = 0;
+                grp.each([&](Pos &p, Vel &v) { p.x += v.vx; local += 1; });
+                gsink += local;
+            });
+        }
+        std::ostringstream label;
+        label << "group<Pos,Vel> frag avg (per hit)";
+        printRow(label.str(), total / args.iterations, gsize);
+        std::cout << "gsink=" << gsink << "\n";
+    }
+
+    // ============================================================
+    // frag 7sys + group<Pos,Vel>: тот же смешанный ворклоад из 7 систем
+    // в фрагментированном мире, но система Pos+Vel идёт через owning-
+    // группу. Показывает ЧАСТИЧНОЕ покрытие: одна система из семи
+    // ускоряется до групповой, остальные остаются на sparse-lookup'ах.
+    // Группа создаётся после чёрна (arrange пакует пулы), в sink НЕ
+    // входит; собственный rng + отдельная контрольная сумма gsink2,
+    // которая обязана совпасть с EnTT-зеркалом.
+    // ============================================================
+    {
+        engine::World world;
+        std::mt19937 grng{static_cast<std::uint32_t>(args.seed)};
+
+        std::vector<engine::EntityId> eids;
+        eids.reserve(args.entities);
+        for (std::size_t i = 0; i < args.entities; ++i)
+        {
+            auto e = world.createEntity();
+            eids.push_back(e);
+            world.addComponent<Pos>(e, Pos{});
+            world.addComponent<Vel>(e, Vel{});
+            if ((i & 1u) == 0u)  world.addComponent<Tag>(e, Tag{});
+            if ((i & 3u) == 0u)  world.addComponent<Health>(e, Health{});
+            if ((i & 7u) == 0u)  world.addComponent<Armor>(e, Armor{});
+            if ((i & 15u) == 0u) world.addComponent<Mana>(e, Mana{});
+            if ((i & 31u) == 0u) world.addComponent<Marker>(e, Marker{});
+        }
+        std::shuffle(eids.begin(), eids.end(), grng);
+        const std::size_t toDestroy = args.entities * 30u / 100u;
+        for (std::size_t i = 0; i < toDestroy; ++i)
+            world.destroyEntity(eids[i]);
+
+        const std::size_t toCreate = args.entities * 20u / 100u;
+        for (std::size_t i = 0; i < toCreate; ++i)
+        {
+            auto e = world.createEntity();
+            world.addComponent<Pos>(e, Pos{});
+            world.addComponent<Vel>(e, Vel{});
+            if ((i & 1u) == 0u) world.addComponent<Tag>(e, Tag{});
+        }
+
+        std::size_t alive = 0;
+        world.each<Pos>([&](Pos &) { ++alive; });
+
+        auto grp = world.group<Pos, Vel>();
+        std::uint64_t gsink2 = 0;
+
+        // Сценарий шумит на малом числе итераций (памятные размещения/планировщик):
+        // минимум 5 прогонов сглаживают выбросы. gsink2 от числа итераций растёт,
+        // поэтому эквивалентность сверяется при одинаковом --iterations.
+        const std::size_t iters = std::max(args.iterations, std::size_t{5});
+
+        double total = 0.0;
+        for (std::size_t it = 0; it < iters; ++it)
+        {
+            total += timeSeconds([&]
+            {
+                std::uint64_t local = 0;
+                // sys 1: Pos+Vel — через owning-группу
+                grp.each([&](Pos &p, Vel &v) { p.x += v.vx; local += 1; });
+                // sys 2..7 — обычные each<>
+                world.each<Pos, Vel, Tag>([&](Pos &, Vel &, Tag &t) { t.v ^= 1u; local += 1; });
+                world.each<Health>([&](Health &h) { h.hp -= 0.001f; local += 1; });
+                world.each<Health, Armor>([&](Health &h, Armor &a) { h.hp += a.def * 0.0001f; local += 1; });
+                world.each<Pos, Tag>([&](Pos &p, Tag &t) { p.y += 0.01f * t.v; local += 1; });
+                world.each<Mana>([&](Mana &m) { m.mp -= 0.002f; local += 1; });
+                world.each<Vel, Armor>([&](Vel &v, Armor &a) { v.vx += a.def * 0.0001f; local += 1; });
+                gsink2 += local;
+            });
+        }
+        std::ostringstream label;
+        label << "frag 7sys + group<Pos,Vel> (alive=" << alive << ") avg (per hit)";
+        printRow(label.str(), total / iters, alive);
+        std::cout << "gsink2=" << gsink2 << "\n";
+    }
+
     return 0;
 }
