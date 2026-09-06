@@ -17,6 +17,7 @@ namespace engine
         virtual void remove(EntityId id) = 0;
         virtual bool contains(EntityId id) const = 0;
         virtual size_t size() const = 0;
+        virtual size_t memoryBytes() const = 0;
         virtual void clear() = 0;
         virtual bool empty() const = 0;
         virtual void sort() = 0;
@@ -174,6 +175,12 @@ namespace engine
         size_t size() const override
         {
             return dense_.size();
+        }
+
+        size_t memoryBytes() const override
+        {
+            return dense_.capacity() * sizeof(Slot) +
+                   sparse_.capacity() * sizeof(std::uint32_t);
         }
 
         void clear() override

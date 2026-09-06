@@ -15,7 +15,6 @@
 #include <unordered_map>
 #include <tuple>
 #include <typeindex>
-#include <functional>
 #include <utility>
 #include <cctype>
 #include <type_traits>
@@ -96,19 +95,22 @@ namespace engine
         EntityManager entities_;
         // Основной массив контейнеров
         std::vector<std::unique_ptr<ISparseSet>> containers_;
-        // Для removers можно сделать так же, или использовать лямбды с захватом указателя
-        std::vector<std::function<void(EntityId)>> removers_;
+        // Removers: неконтролирующие указатели на те же пулы (владеет containers_).
+        // Раньше здесь были std::function с захватом — два indirect call на удаление
+        // компонента; виртуальный ISparseSet::remove даёт один dispatch без
+        // аллокаций при регистрации типа.
+        std::vector<ISparseSet *> removers_;
 
-        // Битовая маска типов компонентов на сущность: бит i означает "есть компонент
-        // с typeId == i". Нужна только для destroyEntity — раньше он звал ВСЕ removers
-        // подряд, то есть делал по одному std::function-вызову на каждый
-        // зарегистрированный тип. В проекте типов ~40, а у сущности их обычно 2-4,
-        // так что ~37 вызовов из 40 были впустую: 127 ns/op против 15 ns/op.
-        std::vector<std::uint64_t> compMask_;
+        // Маска типов компонентов на сущность теперь живёт ВНУТРИ EntityManager
+        // (EntityManager::Record::compMask): поколение и маска делят одну кэш-линию,
+        // так что isAlive + чтение/сброс маски при destroyEntity — один промах
+        // памяти вместо двух-трёх.
 
         // В маску влезает kMaskBits типов. Если типов станет больше, маска перестаёт
         // описывать мир целиком — тогда честно откатываемся на полный обход removers,
         // вместо того чтобы молча терять компоненты при удалении сущности.
+        // Биты типов < kMaskBits при этом остаются корректными, поэтому
+        // hasComponent использует фолбэк per-type, а не глобально.
         static constexpr size_t kMaskBits = 64;
         bool maskUsable_ = true;
 
@@ -119,12 +121,8 @@ namespace engine
                 maskUsable_ = false;
                 return;
             }
-            if (id >= compMask_.size())
-            {
-                const size_t newCap = std::max(static_cast<size_t>(id + 1), compMask_.size() * 2);
-                compMask_.resize(newCap, 0);
-            }
-            compMask_[id] |= (std::uint64_t(1) << typeId);
+            assert(id < entities_.slotCount() && "Entity slot must exist (entity must be alive)");
+            entities_.compMaskRef(id) |= (std::uint64_t(1) << typeId);
         }
         // Опционально: имена типов (для дебага / профилирования)
         std::vector<std::string> typeNames_;
@@ -171,12 +169,10 @@ namespace engine
             entities_.create(count, out);
         }
 
-        /// @brief Предвыделение памяти под сущности и маски компонентов
+        /// @brief Предвыделение памяти под сущности и их маски компонентов
         void reserveEntities(size_t count)
         {
             entities_.reserve(count);
-            if (count > compMask_.size())
-                compMask_.resize(count, 0);
         }
 
         void destroyEntity(EntityId id)
@@ -187,32 +183,31 @@ namespace engine
             if (maskUsable_)
             {
                 // Быстрый путь: зовём removers только для реально имеющихся компонентов.
-                if (id < compMask_.size())
+                // isAlive, чтение маски, сброс маски и инкремент поколения в
+                // EntityManager::destroy — всё в одной кэш-линии records_[id].
+                if (id < entities_.slotCount())
                 {
-                    std::uint64_t m = compMask_[id];
+                    std::uint64_t m = entities_.compMask(id);
                     while (m != 0)
                     {
                         const size_t bit = static_cast<size_t>(std::countr_zero(m));
                         m &= (m - 1); // сбросить младший установленный бит
                         if (bit < removers_.size() && removers_[bit])
-                            removers_[bit](id);
+                            removers_[bit]->remove(id);
                     }
-                    compMask_[id] = 0;
                 }
             }
             else
             {
                 // Типов больше kMaskBits — маска неполная, идём старым путём.
-                for (size_t i = 0; i < removers_.size(); ++i)
+                for (auto *remover : removers_)
                 {
-                    if (removers_[i])
-                        removers_[i](id);
+                    if (remover)
+                        remover->remove(id);
                 }
-                if (id < compMask_.size())
-                    compMask_[id] = 0;
             }
 
-            entities_.destroy(id);
+            entities_.destroy(id); // gen++ и compMask = 0
         }
 
         bool isAlive(EntityId id) const
@@ -290,10 +285,9 @@ namespace engine
             {
                 containers_[id] = std::make_unique<SparseSet<T>>();
 
-                removers_[id] = [ptr = containers_[id].get()](EntityId eid)
-                {
-                    static_cast<SparseSet<T> *>(ptr)->remove(eid);
-                };
+                // Remover = тот же пул через виртуальный ISparseSet::remove.
+                // Время жизни указателя обеспечивает containers_ (unique_ptr).
+                removers_[id] = containers_[id].get();
 
                 typeNames_[id] = getTypeName<T>();
             }
@@ -344,10 +338,10 @@ namespace engine
         bool hasComponent(EntityId id) const
         {
             const size_t typeId = getTypeId<T>();
-            if (maskUsable_ && typeId < kMaskBits && id < compMask_.size())
-            {
-                return (compMask_[id] & (std::uint64_t(1) << typeId)) != 0;
-            }
+            // Биты типов < kMaskBits поддерживаются маской всегда, даже когда
+            // maskUsable_ == false (его портят только типы >= 64): фолбэк per-type.
+            if (typeId < kMaskBits && id < entities_.slotCount())
+                return (entities_.compMask(id) & (std::uint64_t(1) << typeId)) != 0;
             const auto *c = findContainer<T>();
             return c && c->contains(id);
         }
@@ -355,10 +349,17 @@ namespace engine
         template <typename T>
         void removeComponent(EntityId id)
         {
+            // findContainer, а не getContainer: удаление несуществующего типа
+            // не должно создавать пустой пул.
+            auto *container = findContainer<T>();
+            if (!container)
+                return;
+
+            container->remove(id);
+
             const size_t typeId = getTypeId<T>();
-            if (typeId < kMaskBits && id < compMask_.size())
-                compMask_[id] &= ~(std::uint64_t(1) << typeId);
-            getContainer<T>().remove(id);
+            if (typeId < kMaskBits && id < entities_.slotCount())
+                entities_.compMaskRef(id) &= ~(std::uint64_t(1) << typeId);
         }
 
         /// @brief Итерация по компонентам типа T (получить контейнер)
@@ -401,8 +402,7 @@ namespace engine
                 if (container)
                     container->clear();
             }
-            compMask_.clear();
-            entities_.reset();
+            entities_.reset(); // records_ сбрасывает и поколения, и маски компонентов
         }
 
         // ==================== each() - прямые методы итерации ====================
@@ -433,7 +433,7 @@ namespace engine
                 ContainerStats s;
                 s.typeName = typeNames_[i];
                 s.count = containers_[i]->size();
-                s.memoryBytes = s.count * 64; // или s.count * componentSizes_[i] + ...
+                s.memoryBytes = containers_[i]->memoryBytes();
 
                 stats.push_back(std::move(s));
             }
@@ -549,19 +549,62 @@ namespace engine
         {
             World *world;
 
+        private:
+            /// @brief Если exclude-пул E МЕНЬШЕ ведущего, складывает владельцев его
+            /// слотов в битовую карту (плотная проверка L2 вместо случайного чтения
+            /// маски из DRAM на каждую сущность). Иначе — только помечает,
+            /// что карта покрытие неполное и нужна честная проверка hasComponent.
+            template <typename E>
+            void accumulateSkip(std::size_t driverSize,
+                                std::vector<std::uint64_t> &skipBits,
+                                bool &allCovered) const
+            {
+                // findContainer, а не getContainer: тип ни разу не регистрировался —
+                // исключать нечего, и пул создавать не нужно.
+                auto *c = world->template findContainer<E>();
+                if (!c)
+                    return;
+
+                if (c->size() >= driverSize)
+                {
+                    allCovered = false;
+                    return;
+                }
+
+                if (skipBits.empty())
+                    skipBits.assign((world->entitySlotCount() + 63) / 64, 0);
+
+                for (const auto &slot : *c)
+                    skipBits[slot.owner >> 6] |= (std::uint64_t(1) << (slot.owner & 63));
+            }
+
+        public:
             /// @param f: (Ts&...) -> void либо (EntityId, Ts&...) -> void
             template <typename... Es, typename F>
             void exclude(F &&f) &&
             {
                 static_assert(sizeof...(Es) >= 1, "exclude<> требует хотя бы один тип компонента");
+                World *w = world;
 
-                world->template each<Ts...>(
-                    [w = world, fn = std::forward<F>(f)](EntityId id, Ts &...comps) mutable
+                // Тот же выбор ведущего, что внутри each<>: наименьший из требуемых пулов.
+                const std::size_t driverSize = std::min({w->template getContainer<Ts>().size()...});
+
+                std::vector<std::uint64_t> skipBits;
+                bool allCovered = true;
+                (accumulateSkip<Es>(driverSize, skipBits, allCovered), ...);
+
+                w->template each<Ts...>(
+                    [w, skipBits = std::move(skipBits), allCovered, fn = std::forward<F>(f)](
+                        EntityId id, Ts &...comps) mutable
                     {
-                        // hasComponent, а не getContainer: проверка идёт на КАЖДОЙ
-                        // сущности, а слим-путь не создаёт пустые контейнеры
-                        // для exclude-типов и свободен от call в горячем коде.
-                        if ((w->template hasComponent<Es>(id) || ...))
+                        // Быстрый путь: биты пулов меньше ведущего собраны заранее,
+                        // проверка — одна L2-загрузка вместо промаха по records_[id].
+                        if (!skipBits.empty() &&
+                            (skipBits[id >> 6] & (std::uint64_t(1) << (id & 63))))
+                            return;
+
+                        // Пулы >= ведущего битовой картой не покрыты — честная проверка.
+                        if (!allCovered && (w->template hasComponent<Es>(id) || ...))
                             return;
 
                         if constexpr (std::is_invocable_v<F, EntityId, Ts &...>)
